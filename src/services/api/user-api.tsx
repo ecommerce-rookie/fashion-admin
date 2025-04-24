@@ -1,50 +1,26 @@
 import axios from "axios";
-import { authApiConfig, createQueryString, userEndpoint } from "../endpoint";
-import { UserRole } from "../type/user-type";
+import { userEndpoint } from "../endpoint";
+import { User, UserRole } from "../type/user-type";
+import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
+import axiosServices from "@/lib/axios";
 
 export const GetAllUsers = async (params: {
     Page: number
     EachPage: number
-    Roles: UserRole[]
-    Search: string
-    Statuss: string[]
-}) => {
-
-    try {
-        const queryString = createQueryString(params)
-        const response = await axios.get(`${userEndpoint}?${queryString}`)
-        const paginationHeader = response.headers['x-pagination'];
-        const metadata = JSON.parse(paginationHeader || '{}');
-
-        return {
-            success: true,
-            status: response.status,
-            data: {
-                data: response.data,
-                totalCount: metadata.TotalCount,
-                pageSize: metadata.PageSize,
-                currentPage: metadata.CurrentPage,
-                totalPages: metadata.TotalPages
-            }
-        }
-
-    } catch (e) {
-        if (axios.isAxiosError(e) && e.response) {
-            return {
-                success: false,
-                status: e.response.status,
-                message: e.response.data.message || 'An error occurred',
-                data: e.response.data
-            };
-        }
-
-        return {
-            success: false,
-            status: 500,
-            message: 'An error occurred',
-            data: null
-        };
-    }
+    Roles?: UserRole[]
+    Search?: string
+    Statuss?: string[]
+}): Promise<Pagination<User[]>> => {
+    return await fetchPaginatedData<User[]>(
+        userEndpoint,
+        {
+            Page: params.Page,
+            EachPage: params.EachPage,
+            Roles: params.Roles,
+            Search: params.Search,
+            Statuss: params.Statuss
+        },
+    )
 }
 
 export const CreateUser = async ({
@@ -61,49 +37,18 @@ export const CreateUser = async ({
     phone: string
     avatar: string
     status: string
-}) => {
+}): Promise<ResponseModel<string>> => {
 
-    const config = authApiConfig();
+    const response = await axiosServices.post(userEndpoint, {
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        avatar: avatar,
+        status: status,
+    })
 
-    if (!config) {
-        return;
-    }
-
-    try {
-
-        const response = await axios.post(userEndpoint, {
-            email: email,
-            firstName: firstName,
-            lastName: lastName,
-            phone: phone,
-            avatar: avatar,
-            status: status,
-        })
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
+    return response.data;
 }
 
 export const UpdateUser = async ({
@@ -124,83 +69,39 @@ export const UpdateUser = async ({
     status: string
 }) => {
 
-    const config = authApiConfig();
+    const response = await axiosServices.patch(`${userEndpoint}/${id}`, {
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        avatar: avatar,
+        status: status,
+    })
 
-    if (!config) {
-        return;
-    }
-
-    try {
-
-        const response = await axios.patch(`${userEndpoint}/${id}`, {
-            email: email,
-            firstName: firstName,
-            lastName: lastName,
-            phone: phone,
-            avatar: avatar,
-            status: status,
-        })
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
+    return response.data;
 }
 
-export const DeleteUser = async (id: string) => {
+export const UpdateUserStatus = async ({
+    userId,
+    status
+}: {
+    userId: string,
+    status: string
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosServices.patch(`${userEndpoint}/${userId}`, {
+        status: status
+    })
 
-    const config = authApiConfig();
+    return response.data;
+}
 
-    if (!config) {
-        return;
-    }
+export const DeleteUser = async ({
+    id
+}: {
+    id: string
+}): Promise<ResponseModel<string>> => {
 
-    try {
+    const response = await axios.delete(`${userEndpoint}/${id}`)
 
-        const response = await axios.delete(`${userEndpoint}/${id}`)
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
+    return response.data;
 }

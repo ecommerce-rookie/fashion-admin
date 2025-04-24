@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Token } from "@/enum/storage";
 import { getCookie } from "@/utils/storage.util";
 

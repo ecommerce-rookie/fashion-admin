@@ -41,7 +41,7 @@
     "^@/constants/(.*)$",
     "^@/context/(.*)$",
     "^@/hooks/(.*)$",
-    "^@/components/layouts/(.*)$",
+    "^@/components/core/layouts/(.*)$",
     "^@/components/ui/(.*)$",
     "^@/components/errors/(.*)$",
     "^@/components/(.*)$",

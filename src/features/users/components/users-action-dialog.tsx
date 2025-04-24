@@ -1,319 +1,308 @@
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { showSubmittedData } from '@/utils/show-submitted-data'
-import { Button } from '@/components/ui/button'
+"use client";
+
+import { Button } from "@highschool/ui/components/ui/button";
+import { Input } from "@highschool/ui/components/ui/input";
+import { HighSchoolAssets, UserPreview } from "@highschool/interfaces";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@highschool/ui/components/ui/sheet";
+import { Label } from "@highschool/ui/components/ui/label";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
-import { SelectDropdown } from '@/components/select-dropdown'
-import { userTypes } from '../data/data'
-import { User } from '../data/schema'
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@highschool/ui/components/ui/tooltip";
+import { Textarea } from "@highschool/ui/components/ui/textarea";
+import { IconRepeat } from "@tabler/icons-react";
+import { useState } from "react";
+import {
+  useCheckUsernameQuery,
+  useCreateUserMutation,
+  useUploaderMutation,
+} from "@highschool/react-query/queries";
+import { toast } from "sonner";
+import { useDebounceValue } from "@highschool/hooks";
+import { cn } from "@highschool/ui/lib/utils";
 
-
-const formSchema = z
-  .object({
-    firstName: z.string().min(1, { message: 'First Name is required.' }),
-    lastName: z.string().min(1, { message: 'Last Name is required.' }),
-    username: z.string().min(1, { message: 'Username is required.' }),
-    phoneNumber: z.string().min(1, { message: 'Phone number is required.' }),
-    email: z
-      .string()
-      .min(1, { message: 'Email is required.' })
-      .email({ message: 'Email is invalid.' }),
-    password: z.string().transform((pwd) => pwd.trim()),
-    role: z.string().min(1, { message: 'Role is required.' }),
-    confirmPassword: z.string().transform((pwd) => pwd.trim()),
-    isEdit: z.boolean(),
-  })
-  .superRefine(({ isEdit, password, confirmPassword }, ctx) => {
-    if (!isEdit || (isEdit && password !== '')) {
-      if (password === '') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password is required.',
-          path: ['password'],
-        })
-      }
-
-      if (password.length < 8) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must be at least 8 characters long.',
-          path: ['password'],
-        })
-      }
-
-      if (!password.match(/[a-z]/)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least one lowercase letter.',
-          path: ['password'],
-        })
-      }
-
-      if (!password.match(/\d/)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Password must contain at least one number.',
-          path: ['password'],
-        })
-      }
-
-      if (password !== confirmPassword) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Passwords don't match.",
-          path: ['confirmPassword'],
-        })
-      }
-    }
-  })
-type UserForm = z.infer<typeof formSchema>
+import ImageUploader from "@/components/ui/image-upload";
+import { generatePassword } from "@/domain/utils/password";
+import { PasswordInput } from "@/components/ui/password-input";
+import { AnimatedCheckCircle } from "@/components/core/common/animated-icons/animated-check-circle";
+import { AnimatedXCircle } from "@/components/core/common/animated-icons/animated-x-icon";
+import { useTable } from "@/stores/table-context";
 
 interface Props {
-  currentRow?: User
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  currentRow?: UserPreview;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
-
 export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
-  const isEdit = !!currentRow
-  const form = useForm<UserForm>({
-    resolver: zodResolver(formSchema),
-    defaultValues: isEdit
-      ? {
-          ...currentRow,
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        }
-      : {
-          firstName: '',
-          lastName: '',
-          username: '',
-          email: '',
-          role: '',
-          phoneNumber: '',
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        },
-  })
-
-  const onSubmit = (values: UserForm) => {
-    form.reset()
-    showSubmittedData(values)
-    onOpenChange(false)
-  }
-
-  const isPasswordTouched = !!form.formState.dirtyFields.password
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(state) => {
-        form.reset()
-        onOpenChange(state)
-      }}
-    >
-      <DialogContent className='sm:max-w-lg'>
-        <DialogHeader className='text-left'>
-          <DialogTitle>{isEdit ? 'Edit User' : 'Add New User'}</DialogTitle>
-          <DialogDescription>
-            {isEdit ? 'Update the user here. ' : 'Create new user here. '}
-            Click save when you&apos;re done.
-          </DialogDescription>
-        </DialogHeader>
-        <div className='-mr-4 h-[26.25rem] w-full overflow-y-auto py-1 pr-4'>
-          <Form {...form}>
-            <form
-              id='user-form'
-              onSubmit={form.handleSubmit(onSubmit)}
-              className='space-y-4 p-0.5'
-            >
-              <FormField
-                control={form.control}
-                name='firstName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      First Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='John'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='lastName'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Last Name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='Doe'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Username
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='john_doe'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='email'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Email
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='john.doe@gmail.com'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='phoneNumber'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Phone Number
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='+123456789'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='role'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Role
-                    </FormLabel>
-                    <SelectDropdown
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      placeholder='Select a role'
-                      className='col-span-4'
-                      items={userTypes.map(({ label, value }) => ({
-                        label,
-                        value,
-                      }))}
-                    />
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='password'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Password
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder='e.g., S3cur3P@ssw0rd'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='confirmPassword'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-right'>
-                      Confirm Password
-                    </FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        disabled={!isPasswordTouched}
-                        placeholder='e.g., S3cur3P@ssw0rd'
-                        className='col-span-4'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </div>
-        <DialogFooter>
-          <Button type='submit' form='user-form'>
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
+  return <div>okok</div>
 }
+
+
+// export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
+//   const { open: typeOpen } = useTable();
+//   const title =
+//     typeOpen === "add"
+//       ? "Add Profile"
+//       : typeOpen === "edit"
+//         ? "Edit Profile"
+//         : "View Profile";
+
+//   const { mutate: createUser, isPending: isCreating } = useCreateUserMutation();
+
+//   const [username, setUsername] = useState<string>(currentRow?.username ?? "");
+//   const debouncedUsername = useDebounceValue(username, 1000);
+//   const [email, setEmail] = useState<string>(currentRow?.email ?? "");
+//   const [password, setPassword] = useState<string>("");
+//   const [bio, setBio] = useState<string>("");
+//   const [fullName, setFullName] = useState<string>(currentRow?.fullname ?? "");
+
+//   const checkUsername = useCheckUsernameQuery({
+//     username: debouncedUsername,
+//   });
+
+//   const [singleFile, setSingleFile] = useState<File | null>(null);
+
+//   const uploadImage = useUploaderMutation();
+
+//   const clearFields = () => {
+//     setUsername("");
+//     setEmail("");
+//     setPassword("");
+//     setBio("");
+//     setFullName("");
+//     setSingleFile(null);
+//   };
+
+//   const handleUpload = async () => {
+//     if (singleFile) {
+//       toast.info("Uploading image...");
+
+//       try {
+//         // Simulate upload delay
+//         const data = await uploadImage.mutateAsync(
+//           {
+//             image: singleFile,
+//             fileName: title,
+//             folder: HighSchoolAssets.Test,
+//             presetName: "avatar",
+//           },
+//           {
+//             onSuccess: (data) => {
+//               return data;
+//             },
+//           },
+//         );
+
+//         toast.success("Image uploaded successfully");
+
+//         return data.data ?? "";
+//       } catch {
+//         toast.error("Failed to upload image");
+
+//         return "";
+//       }
+//     }
+
+//     return "";
+//   };
+
+//   const validationFields = () => {
+//     if (!username && !email && !password && !fullName && !singleFile) {
+//       return "Please fill all required fields";
+//     }
+
+//     if (!/^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/.test(email)) {
+//       return "Invalid email format";
+//     }
+
+//     if (username.length < 3) {
+//       return "Username must be at least 3 characters";
+//     }
+
+//     if (checkUsername.data) {
+//       return "Username already exists";
+//     }
+
+//     if (fullName.length < 3) {
+//       return "Full name must be at least 3 characters";
+//     }
+
+//     const passwordRegex =
+//       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+//     if (!passwordRegex.test(password)) {
+//       return "Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character";
+//     }
+
+//     if (!singleFile) {
+//       return "Please upload an image";
+//     }
+
+//     return "";
+//   };
+
+//   const handleImageChange = (file: File | null) => {
+//     if (file === null) {
+//       setSingleFile(null);
+//     } else {
+//       setSingleFile(file);
+//     }
+//   };
+
+//   const handleSaveChange = async () => {
+//     const error = validationFields();
+
+//     if (error !== "") {
+//       toast.error(error);
+
+//       return;
+//     }
+//     const profilePicture = await handleUpload();
+
+//     createUser({
+//       user: {
+//         username,
+//         email,
+//         bio,
+//         fullName,
+//         password,
+//         profilePicture: profilePicture,
+//       },
+//     });
+
+//     clearFields();
+//     onOpenChange(false);
+//   };
+
+//   return (
+//     <Sheet open={open} onOpenChange={onOpenChange}>
+//       <SheetContent className="overflow-y-auto">
+//         <SheetHeader>
+//           <SheetTitle>{title}</SheetTitle>
+//           <SheetDescription>
+//             Make changes to your profile here. Click save when you&apos;re done.
+//           </SheetDescription>
+//         </SheetHeader>
+//         <div className="grid gap-4 overflow-y-auto py-4">
+//           <div>
+//             <Label className="text-sm font-semibold">
+//               Username <span className="text-primary">(required)</span>
+//             </Label>
+//             <div className="relative">
+//               <Input
+//                 placeholder="Username"
+//                 type="text"
+//                 value={username}
+//                 onChange={(e) => setUsername(e.target.value)}
+//               />
+//               <div
+//                 className={cn(
+//                   "flex h-full items-center justify-center px-3 absolute top-0 right-0",
+//                   checkUsername.isLoading
+//                     ? "text-gray-200 dark:text-gray-700"
+//                     : checkUsername.data === false
+//                       ? "text-destructive"
+//                       : "text-emerald-500",
+//                 )}
+//                 style={{
+//                   color: checkUsername.isLoading
+//                     ? "gray"
+//                     : checkUsername.data
+//                       ? "red"
+//                       : "green",
+//                 }}
+//               >
+//                 {checkUsername.isLoading && checkUsername.data === false ? (
+//                   <AnimatedCheckCircle />
+//                 ) : (
+//                   <AnimatedXCircle />
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+//           <div>
+//             <Label className="text-sm font-semibold">
+//               Email <span className="text-primary">(required)</span>
+//             </Label>
+//             <Input
+//               placeholder="Email"
+//               type="email"
+//               value={email}
+//               onChange={(e) => setEmail(e.target.value)}
+//             />
+//           </div>
+//           <div>
+//             <Label className="flex justify-between text-sm font-semibold">
+//               <div>
+//                 Password <span className="text-primary">(required)</span>
+//               </div>
+
+//               <TooltipProvider>
+//                 <Tooltip>
+//                   <TooltipTrigger asChild>
+//                     <IconRepeat
+//                       className="mr-2 cursor-pointer"
+//                       size={14}
+//                       onClick={() => setPassword(generatePassword())}
+//                     />
+//                   </TooltipTrigger>
+//                   <TooltipContent>
+//                     <p>Generate Password</p>
+//                   </TooltipContent>
+//                 </Tooltip>
+//               </TooltipProvider>
+//             </Label>
+//             <PasswordInput
+//               placeholder="Password"
+//               value={password}
+//               onChange={(e) => setPassword(e.target.value)}
+//             />
+//           </div>
+//           <div>
+//             <Label className="text-sm font-semibold">
+//               Full name <span className="text-primary">(required)</span>
+//             </Label>
+//             <Input
+//               placeholder="Full name"
+//               type="text"
+//               value={fullName}
+//               onChange={(e) => setFullName(e.target.value)}
+//             />
+//           </div>
+//           <div>
+//             <Label className="text-sm font-semibold">Bio</Label>
+//             <Textarea
+//               placeholder="Bio"
+//               value={bio}
+//               onChange={(e) => setBio(e.target.value)}
+//             />
+//           </div>
+//           <div>
+//             <ImageUploader
+//               defaultMode="single"
+//               label="Avatar"
+//               maxImages={1}
+//               showModeToggle={false}
+//               value={currentRow?.profilePicture ?? ""}
+//               onChange={(e) => handleImageChange(Array.isArray(e) ? e[0] : e)}
+//             />
+//           </div>
+//         </div>
+//         <SheetFooter>
+//           <Button type="submit" onClick={handleSaveChange}>
+//             Save changes
+//           </Button>
+//         </SheetFooter>
+//       </SheetContent>
+//     </Sheet>
+//   );
+// }

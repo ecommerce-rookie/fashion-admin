@@ -7,8 +7,8 @@ import {
   IconUser,
 } from '@tabler/icons-react'
 import { Separator } from '@/components/ui/separator'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
+import { Header } from '@/components/core/layout/header'
+import { Main } from '@/components/core/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
