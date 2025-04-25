@@ -91,7 +91,7 @@ export function DataTable<T>({
   }, [table, setTable]);
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-primary mb-0 pb-0 text-2xl font-bold">{title}</p>

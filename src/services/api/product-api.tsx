@@ -1,184 +1,79 @@
-import axios from "axios"
-import { authApiConfig, createQueryString, productEndpoint } from "../endpoint"
+import { productEndpoint } from "../endpoint";
+import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
+import axiosServices, { axiosClientUpload } from "@/lib/axios";
+import { Product } from "../type/product-type";
 
-export const GetAllProducts = async (params: {
-    Page: number
-    EachPage: number
-    SortBy?: string
-    IsAscending?: boolean
-    Categories?: number[]
-    Search?: string
-    MinPrice?: number
-    MaxPrice?: number
-    IsNew?: boolean
-    IsSale?: boolean
-    Sizes?: string[]
-}) => {
+export const GetAllProducts = async ({
+    Page,
+    EachPage,
+    SortBy,
+    IsAscending,
+    Categories,
+    Search,
+    MinPrice,
+    MaxPrice,
+    IsNew,
+    IsSale,
+    Sizes
+}: {
+    Page: number;
+    EachPage: number;
+    SortBy?: string;
+    IsAscending?: boolean;
+    Categories?: number[];
+    Search?: string;
+    MinPrice?: number;
+    MaxPrice?: number;
+    IsNew?: boolean;
+    IsSale?: boolean;
+    Sizes?: string[];
+}): Promise<Pagination<Product[]>> => {
+    const cleanedCategories = Categories && Categories.length > 0
+        ? Categories.map(category => category.toString())
+        : undefined;
 
-    try {
-        const queryString = createQueryString(params)
-        const response = await axios.get(`${productEndpoint}?${queryString}`)
-        const paginationHeader = response.headers['x-pagination'];
-        const metadata = JSON.parse(paginationHeader || '{}');
-
-        return {
-            success: true,
-            status: response.status,
-            data: {
-                data: response.data,
-                totalCount: metadata.TotalCount,
-                pageSize: metadata.PageSize,
-                currentPage: metadata.CurrentPage,
-                totalPages: metadata.TotalPages
-            }
+    return await fetchPaginatedData(
+        productEndpoint,
+        {
+            Page,
+            EachPage,
+            SortBy,
+            IsAscending,
+            Categories: cleanedCategories,
+            Search,
+            MinPrice,
+            MaxPrice,
+            IsNew,
+            IsSale,
+            Sizes
         }
+    );
+};
 
-    } catch (e) {
-        if (axios.isAxiosError(e) && e.response) {
-            return {
-                success: false,
-                status: e.response.status,
-                message: e.response.data.message || 'An error occurred',
-                data: e.response.data
-            };
-        }
+export const CreateProduct = async (data: FormData): Promise<ResponseModel<string>> => {
+    const response = await axiosClientUpload.post(productEndpoint, data);
 
-        return {
-            success: false,
-            status: 500,
-            message: 'An error occurred',
-            data: null
-        };
-    }
-}
+    return response.data;
+};
 
-export const CreateProduct = async (data: FormData) => {
+export const UpdateProduct = async ({
+    slug,
+    data
+}: {
+    slug: string;
+    data: FormData;
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosClientUpload.patch(`${productEndpoint}/${slug}`, data);
 
-    const config = authApiConfig();
+    return response.data;
+};
 
-    if (!config) {
-        return;
-    }
+export const DeleteProduct = async ({
+    id
+}: {
+    id: string;
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosServices.delete(`${productEndpoint}/${id}`);
 
-    try {
-
-        const response = await axios.post(
-            productEndpoint,
-            data,
-            {
-                headers: {
-                    ...config.headers,
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
-}
-
-export const UpdateProduct = async (data: { data: FormData, slug: string }) => {
-
-    const config = authApiConfig();
-
-    if (!config) {
-        return;
-    }
-
-    try {
-
-        const response = await axios.post(
-            `${productEndpoint}/${data.slug}`,
-            data.data,
-            {
-                headers: {
-                    ...config.headers,
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
-}
-
-export const DeleteProduct = async (id: string) => {
-
-    const config = authApiConfig();
-
-    if (!config) {
-        return;
-    }
-
-    try {
-
-        const response = await axios.delete(`${productEndpoint}/${id}`)
-
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
-        }
-
-    } catch (error) {
-
-        if (axios.isAxiosError(error) && error.response) {
-            return {
-                success: false,
-                status: error.response.status,
-                message: error.response.data.message || 'An error occurred',
-                data: error.response.data
-            };
-        } else {
-            return {
-                success: false,
-                status: 500,
-                message: 'An unexpected error occurred',
-                data: null
-            };
-        }
-
-    }
-}
+    return response.data;
+};

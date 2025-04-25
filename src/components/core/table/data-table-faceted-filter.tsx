@@ -107,12 +107,12 @@ export function DataTableFacetedFilter<TData, TValue>({
                         const filterValues = Array.from(selectedValues);
 
                         column?.setFilterValue(
-                          filterValues.length ? filterValues : undefined,
+                          filterValues?.length ? filterValues : undefined,
                         );
 
                         setSingleSelect &&
                           setSingleSelect(
-                            filterValues.length ? filterValues[0] : "",
+                            filterValues?.length ? filterValues[0] : "",
                           );
                       } else if (setSelect) {
                         if (isSelected) {
@@ -123,7 +123,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         const filterValues = Array.from(selectedValues);
 
                         column?.setFilterValue(
-                          filterValues.length ? filterValues : undefined,
+                          filterValues?.length ? filterValues : undefined,
                         );
 
                         setSelect && setSelect(filterValues);
@@ -146,7 +146,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     <span>{option.label}</span>
                     {facets?.get(option.value) && (
                       <span className="ml-auto flex size-4 items-center justify-center font-mono text-xs">
-                        {facets.get(option.value)}
+                        {facets?.get(option.value)}
                       </span>
                     )}
                   </CommandItem>

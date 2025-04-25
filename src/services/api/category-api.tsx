@@ -1,32 +1,65 @@
-import axios from "axios";
 import { categoryEndpoint } from "../endpoint";
+import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
+import axiosServices from "@/lib/axios";
+import { Category } from "../type/category-type";
 
-export const GetAllCategories = async () => {
-
-    try {
-        const response = await axios.get(`${categoryEndpoint}`)
-
-        return {
-            success: true,
-            status: response.status,
-            data: response.data
+export const GetAllCategories = async ({
+    page,
+    eachPage,
+    search
+}: {
+    page: number;
+    eachPage: number;
+    search: string;
+}): Promise<Pagination<Category[]>> => {
+    return await fetchPaginatedData(
+        categoryEndpoint,
+        {
+            page,
+            eachPage,
+            search
         }
+    )
+}
 
-    } catch (e) {
-        if (axios.isAxiosError(e) && e.response) {
-            return {
-                success: false,
-                status: e.response.status,
-                message: e.response.data.message || 'An error occurred',
-                data: e.response.data
-            };
-        }
+export const CreateCategory = async ({
+    name,
+    description
+}: {
+    name: string;
+    description: string;
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosServices.post(categoryEndpoint, {
+        name,
+        description
+    })
 
-        return {
-            success: false,
-            status: 500,
-            message: 'An error occurred',
-            data: null
-        };
-    }
+    return response.data
+}
+
+export const UpdateCategory = async ({
+    id,
+    name,
+    description
+}: {
+    id: string;
+    name: string;
+    description: string;
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosServices.patch(`${categoryEndpoint}/${id}`, {
+        name,
+        description
+    })
+
+    return response.data
+}
+
+export const DeleteCategory = async ({
+    id
+}: {
+    id: number;
+}): Promise<ResponseModel<string>> => {
+    const response = await axiosServices.delete(`${categoryEndpoint}/${id}`)
+
+    return response.data
 }

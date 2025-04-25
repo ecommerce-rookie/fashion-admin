@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useRouter } from '@tanstack/react-router'
 import {
   IconArrowRightDashed,
   IconDeviceLaptop,
@@ -21,7 +21,7 @@ import { sidebarData } from '@/constants/sidebar-data'
 import { ScrollArea } from './ui/scroll-area'
 
 export function CommandMenu() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { setTheme } = useTheme()
   const { open, setOpen } = useSearch()
 
@@ -31,6 +31,19 @@ export function CommandMenu() {
       command()
     },
     [setOpen]
+  )
+
+  const handleNavigation = React.useCallback(
+    (url: string) => {
+      runCommand(() => {
+        if (router) {
+          router.navigate({ to: url });
+        } else {
+          window.location.href = url;
+        }
+      });
+    },
+    [router, runCommand]
   )
 
   return (
@@ -48,7 +61,7 @@ export function CommandMenu() {
                       key={`${navItem.url}-${i}`}
                       value={navItem.title}
                       onSelect={() => {
-                        runCommand(() => navigate({ to: navItem.url }))
+                        if (navItem.url) handleNavigation(navItem.url)
                       }}
                     >
                       <div className='mr-2 flex h-4 w-4 items-center justify-center'>
@@ -60,10 +73,10 @@ export function CommandMenu() {
 
                 return navItem.items?.map((subItem, i) => (
                   <CommandItem
-                    key={`${subItem.url}-${i}`}
+                    key={`${subItem.url || i}-${i}`}
                     value={subItem.title}
                     onSelect={() => {
-                      runCommand(() => navigate({ to: subItem.url }))
+                      if (subItem.url) handleNavigation(subItem.url)
                     }}
                   >
                     <div className='mr-2 flex h-4 w-4 items-center justify-center'>

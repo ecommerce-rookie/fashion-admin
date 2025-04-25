@@ -12,6 +12,13 @@ export type User = {
     role: UserRole
 }
 
+export type Author = {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatar: string | null;
+}
+
 export enum UserRole {
     ADMIN = 'Admin',
     STAFF = 'Staff',

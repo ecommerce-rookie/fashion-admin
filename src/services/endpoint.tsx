@@ -2,10 +2,7 @@
 import { Token } from "@/enum/storage";
 import { getCookie } from "@/utils/storage.util";
 
-const endpoint = import.meta.env.VITE_API_ENDPOINT
 const apiPrefix = '/api/v1'
-
-
 
 export const authApiConfig = () => {
     const token = getCookie(Token.JWT_TOKEN);
@@ -33,7 +30,7 @@ export const createQueryString = (params: Record<string, any>): string => {
     return urlParams.toString();
 };
 
-export const productEndpoint = `${endpoint}/${apiPrefix}/products`
-export const userEndpoint = `${endpoint}/${apiPrefix}/users`
-export const orderEndpoint = `${endpoint}/${apiPrefix}/orders`
-export const categoryEndpoint = `${endpoint}/${apiPrefix}/categories`
+export const productEndpoint = `${apiPrefix}/products`
+export const userEndpoint = `${apiPrefix}/users`
+export const orderEndpoint = `${apiPrefix}/orders`
+export const categoryEndpoint = `${apiPrefix}/categories`

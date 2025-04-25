@@ -18,8 +18,8 @@ export interface Pagination<T> {
 export interface Metadata {
   TotalCount: number;
   PageSize: number;
-  TotalPages: number;
   CurrentPage: number;
+  TotalPages: number;
 }
 
 type QueryParams = Record<
@@ -59,10 +59,10 @@ async function fetchPaginatedData<T>(
     const response = await axiosServices.get(endpoint, {
       params: filteredParams,
     });
-
+    
     const paginationHeader = response.headers["x-pagination"];
     const metadata: Metadata = JSON.parse(paginationHeader || "{}");
-
+    
     return {
       data: response.data,
       currentPage: metadata.CurrentPage,

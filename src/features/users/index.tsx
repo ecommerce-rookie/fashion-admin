@@ -14,26 +14,19 @@ export default function Users() {
   });
 
   return (
-    <TableProvider>
-      <Main>
-        {/* <div className='mb-2 flex flex-wrap items-center justify-between space-y-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
-            <p className='text-muted-foreground'>
-              Manage your users and their roles here.
-            </p>
-          </div>
-          <UsersPrimaryButtons />
-        </div> */}
+    <Main>
+      <TableProvider>
+
         <DataTable
           columns={columns}
           filter={filter}
           subTitle="Manage your Users here."
           title="User List"
         />
-      </Main>
 
-      <UsersDialogs />
-    </TableProvider>
+
+        <UsersDialogs />
+      </TableProvider>
+    </Main>
   )
 }
