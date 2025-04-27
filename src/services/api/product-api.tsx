@@ -1,7 +1,8 @@
 import { productEndpoint } from "../endpoint";
 import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
 import axiosServices, { axiosClientUpload } from "@/lib/axios";
-import { Product } from "../type/product-type";
+import { ProductDetail, ProductPreview } from "../type/product-type";
+
 
 export const getAllProducts = async ({
     page,
@@ -27,7 +28,7 @@ export const getAllProducts = async ({
     isNew?: boolean;
     isSale?: boolean;
     sizes?: string[];
-}): Promise<Pagination<Product[]>> => {
+}): Promise<Pagination<ProductPreview[]>> => {
     const cleanedCategories = categories && categories.length > 0
         ? categories.map(category => category.toString())
         : undefined;
@@ -47,8 +48,15 @@ export const getAllProducts = async ({
             isSale,
             sizes
         }
-    );
-};
+    )
+}
+
+export const getProductBySlug = async (slug: string): Promise<ResponseModel<ProductDetail>> => {
+
+    const response = await axiosServices.get(`${productEndpoint}/${slug}`)
+
+    return response.data
+}
 
 export const CreateProduct = async (data: FormData): Promise<ResponseModel<string>> => {
     const response = await axiosClientUpload.post(productEndpoint, data);

@@ -7,34 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTable } from "@/stores/table-context";
 import { ProductActionDialog } from "./components/product-action-dialog";
-import { ProductDeleteDialog } from "./components/product-delete-dialog";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { useProductBySlugQuery } from "@/services/query/product-query";
 
 export default function ProductDetail() {
-    const { id } = useParams({ from: "/_authenticated/orders/$id" });
-    const navigate = useNavigate();
-    // const { data, isLoading } = useProduct(id || "");
-    const product = data?.data;
+    const { id } = useParams({ from: "/_authenticated/products/$id" })
+    const navigate = useNavigate()
+    const { data, isLoading } = useProductBySlugQuery(id || "")
+    const product = data?.data
 
-    const { open, setOpen, setCurrentRow } = useTable();
 
     const handleEdit = () => {
-        if (product) {
-            setCurrentRow(product);
-            setOpen("edit");
-        }
+        
     };
 
     const handleDelete = () => {
-        if (product) {
-            setCurrentRow(product);
-            setOpen("delete");
-        }
+        
     };
 
     const formatDate = (dateString?: string) => {
-        if (!dateString) return "N/A";
-        return new Date(dateString).toLocaleString();
+        if (!dateString) return "N/A"
+        return new Date(dateString).toLocaleString()
     };
 
     if (isLoading) {
@@ -63,7 +56,7 @@ export default function ProductDetail() {
                 <div className="flex flex-col items-center justify-center h-[60vh]">
                     <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
                     <p className="text-muted-foreground mb-6">The product you are looking for does not exist or has been deleted.</p>
-                    <Button onClick={() => navigate("/products")}>
+                    <Button onClick={() => navigate({ to: "/products" })}>
                         Back to Products
                     </Button>
                 </div>
@@ -77,7 +70,7 @@ export default function ProductDetail() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                        <Button variant="outline" size="icon" onClick={() => navigate("/products")}>
+                        <Button variant="outline" size="icon" onClick={() => navigate({ to: "/products" })}>
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <h1 className="text-2xl font-bold">{product.name}</h1>
@@ -117,10 +110,10 @@ export default function ProductDetail() {
                                         <p className="text-sm font-medium text-muted-foreground">ID</p>
                                         <p className="break-all">{product.id}</p>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <p className="text-sm font-medium text-muted-foreground">Slug</p>
                                         <p>{product.slug || "N/A"}</p>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div>
@@ -202,11 +195,7 @@ export default function ProductDetail() {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Created By</p>
-                                    <p>{product.createdBy ?? "N/A"}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Version</p>
-                                    <p className="break-all">{product.version}</p>
+                                    <p>{`${product.author.firstName} + ' ' + ${product.author.lastName}` ?? "N/A"}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Deleted</p>
@@ -219,7 +208,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Dialogs */}
-            {product && (
+            {/* {product && (
                 <>
                     <ProductActionDialog
                         key={`product-edit-${product.id}`}
@@ -232,20 +221,8 @@ export default function ProductDetail() {
                             }, 500);
                         }}
                     />
-
-                    <ProductDeleteDialog
-                        key={`product-delete-${product.id}`}
-                        currentRow={product}
-                        open={open === "delete"}
-                        onOpenChange={() => {
-                            setOpen("delete");
-                            setTimeout(() => {
-                                setCurrentRow(null);
-                            }, 500);
-                        }}
-                    />
                 </>
-            )}
+            )} */}
         </Main>
     );
 }

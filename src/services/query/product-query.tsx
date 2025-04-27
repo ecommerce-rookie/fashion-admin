@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CreateProduct, DeleteProduct, getAllProducts, UpdateProduct } from "../api/product-api"
+import { CreateProduct, DeleteProduct, getAllProducts, getProductBySlug, UpdateProduct } from "../api/product-api"
 import { toast } from "sonner"
 
 export const useProductsQuery = (params: {
@@ -18,6 +18,13 @@ export const useProductsQuery = (params: {
     return useQuery({
         queryKey: ["products", params],
         queryFn: () => getAllProducts(params),
+    })
+}
+
+export const useProductBySlugQuery = (slug: string) => {
+    return useQuery({
+        queryKey: ["product-by-id", slug],
+        queryFn: () => getProductBySlug(slug),
     })
 }
 

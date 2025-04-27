@@ -1,17 +1,24 @@
 import { useTable } from "@/stores/table-context";
-import { ProductActionDialog } from "./product-action-dialog";
 import { ProductDeleteDialog } from "./product-delete-dialog";
 import { ProductDetailDialog } from "./product-detail-dialog"; // We'll create this next
+import { ProductsActionDialog } from "./product-action-dialog";
 
 export function ProductDialogs() {
     const { open, setOpen, currentRow, setCurrentRow } = useTable();
 
     return (
         <>
-            <ProductActionDialog
-                key="product-add"
+            <ProductsActionDialog
+                key={`product-add`}
+                currentRow={currentRow}
                 open={open === "add"}
-                onOpenChange={() => setOpen("add")}
+                mode="add"
+                onOpenChange={() => {
+                    setOpen("add");
+                    setTimeout(() => {
+                        setCurrentRow(null);
+                    }, 500);
+                }}
             />
 
             {currentRow && (
@@ -27,17 +34,7 @@ export function ProductDialogs() {
                         }}
                     />
 
-                    <ProductActionDialog
-                        key={`product-edit-${currentRow.id}`}
-                        currentRow={currentRow}
-                        open={open === "edit"}
-                        onOpenChange={() => {
-                            setOpen("edit");
-                            setTimeout(() => {
-                                setCurrentRow(null);
-                            }, 500);
-                        }}
-                    />
+
 
                     <ProductDeleteDialog
                         key={`product-delete-${currentRow.id}`}

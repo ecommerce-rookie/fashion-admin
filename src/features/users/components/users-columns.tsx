@@ -5,10 +5,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
-
-
 import { UserTableRowActions } from "./user-table-row-actions";
-
 import { User } from "@/services/type/user-type";
 import { DataTableColumnHeader } from "@/components/core/table/data-table-column-header";
 import LongText from "@/components/long-text";
@@ -35,7 +32,7 @@ export const columns: ColumnDef<User>[] = [
           </Avatar>
           <LongText className="max-w-36">{fullName}</LongText>
         </div>
-      );
+      )
     },
     meta: { className: "w-36" },
   },

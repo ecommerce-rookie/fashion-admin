@@ -41,8 +41,8 @@ export const columns: ColumnDef<ProductPreview>[] = [
                     {
                         row.original.unitPrice !== row.original.purchasePrice ? (
                             <>
-                                <span>{row.original.purchasePrice}</span>
-                                <span className="text-muted-foreground">{row.original.unitPrice}</span>
+                                <span className="text-sm tracking-wider">{row.original.purchasePrice}</span>
+                                <span className="text-sm text-muted-foreground tracking-wider">{row.original.unitPrice}</span>
                             </>
                         ) : (
                             <span>{row.original.unitPrice}</span>
@@ -50,7 +50,7 @@ export const columns: ColumnDef<ProductPreview>[] = [
                     }
 
                 </div>
-            );
+            )
         },
     },
     {
@@ -61,11 +61,11 @@ export const columns: ColumnDef<ProductPreview>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex flex-col gap-x-2 w-full">
-                    <div className="flex items-center gap-x-2">
+                    <div className="flex items-center justify-between gap-x-2 w-[20%]">
                         <span>{row.original.star} </span>
                         <IconStarFilled size={16} />
                     </div>
-                    <div className="flex items-center gap-x-2">
+                    <div className="flex items-center justify-between gap-x-2 w-[20%]">
                         <span>{row.original.reviewCount ?? 0}</span>
                         <IconUser size={16} />
                     </div>

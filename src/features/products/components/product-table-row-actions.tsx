@@ -9,26 +9,25 @@ import {
 import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 import { Row } from "@tanstack/react-table";
 import { useTable } from "@/stores/table-context";
+import { useNavigate } from "@tanstack/react-router";
+import { ProductPreview } from "@/services/type/product-type";
 
-interface DataTableRowActionsProps<T> {
-    row: Row<T>;
+interface DataTableRowActionsProps {
+    row: Row<ProductPreview>;
 }
 
-export function ProductTableRowActions<T>({
+export function ProductTableRowActions({
     row,
-}: DataTableRowActionsProps<T>) {
+}: DataTableRowActionsProps) {
+    const navigate = useNavigate()
     const { setOpen, setCurrentRow } = useTable();
 
     // const product = row.original as Product;
 
     const onView = () => {
-        // navigate(`/products/${product.id}`);
-    };
-
-    const onViewInModal = () => {
-        setCurrentRow(row.original);
-        setOpen("view");
-    };
+        navigate({ to: "/products/$id", params: { id: row.original.slug } });
+        // navigate({ to: `/products/${row.original.slug}` })
+    }
 
     const onEdit = () => {
         setCurrentRow(row.original);
@@ -52,10 +51,6 @@ export function ProductTableRowActions<T>({
                 <DropdownMenuItem onClick={onView}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onViewInModal}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Quick View
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onEdit}>
                     <Pencil className="mr-2 h-4 w-4" />
