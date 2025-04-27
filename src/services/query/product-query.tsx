@@ -1,23 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CreateProduct, DeleteProduct, GetAllProducts, UpdateProduct } from "../api/product-api"
+import { CreateProduct, DeleteProduct, getAllProducts, UpdateProduct } from "../api/product-api"
 import { toast } from "sonner"
 
 export const useProductsQuery = (params: {
-    Page: number
-    EachPage: number
-    SortBy?: string
-    IsAscending?: boolean
-    Categories?: number[]
-    Search?: string
-    MinPrice?: number
-    MaxPrice?: number
-    IsNew?: boolean
-    IsSale?: boolean
-    Sizes?: string[]
+    page: number
+    eachPage: number
+    sortBy?: string
+    isAscending?: boolean
+    categories?: number[]
+    search?: string
+    minPrice?: number
+    maxPrice?: number
+    isNew?: boolean
+    isSale?: boolean
+    sizes?: string[]
 }) => {
     return useQuery({
         queryKey: ["products", params],
-        queryFn: () => GetAllProducts(params),
+        queryFn: () => getAllProducts(params),
     })
 }
 

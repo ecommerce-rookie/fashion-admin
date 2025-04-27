@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/authStore";
@@ -16,7 +17,7 @@ export default function SigninCallback() {
             } catch (error) {
                 console.error("Đăng nhập thất bại:", error);
                 toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
-                navigate({ to: "/sign-in-2" });
+                navigate({ to: "/sign-in" });
             }
         };
 

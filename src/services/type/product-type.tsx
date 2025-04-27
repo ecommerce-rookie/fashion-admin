@@ -1,4 +1,6 @@
-export type Product = {
+import { Author } from "./user-type"
+
+export type ProductPreview = {
     id: string
     name: string
     unitPrice: number
@@ -7,16 +9,36 @@ export type Product = {
     image: string
     isNew: boolean
     slug: string
+    author: Author
+    categoryName: string
+    reviewCount: number
+    star: number
 }
 
 export type ProductDetail = {
-    Name: string
-    UnitPrice: number
-    PurchasePrice: number
-    Description: string
-    Quantity: number
-    Sizes: string[]
-    CategoryId: string
-    Gender: string
-    Files: File[]
+    id: string
+    name: string | null
+    unitPrice: number
+    purchasePrice: number
+    description: string | null
+    status: string
+    categoryId: number
+    categoryName: string | null
+    quantity: number | null
+    colors: string[]
+    sizes: string[]
+    gender: string
+    images: string[]
+    author: {
+        id: string
+        firstName: string | null
+        lastName: string | null
+        avatar: string | null
+    }
+    isNew: boolean
+    star: number
+    reviewCount: number
+    createdAt: string
+    updatedAt: string
+    isDeleted: boolean
 }

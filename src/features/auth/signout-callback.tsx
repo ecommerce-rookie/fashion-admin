@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,7 +13,7 @@ export default function SignoutCallback() {
             try {
                 await processLogoutCallback();
                 toast.success("Đăng xuất thành công!");
-                navigate({ to: "/sign-in-2" });
+                navigate({ to: "/sign-in" });
             } catch (error) {
                 console.error("Đăng xuất thất bại:", error);
                 toast.error("Có lỗi xảy ra trong quá trình đăng xuất.");

@@ -3,49 +3,49 @@ import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
 import axiosServices, { axiosClientUpload } from "@/lib/axios";
 import { Product } from "../type/product-type";
 
-export const GetAllProducts = async ({
-    Page,
-    EachPage,
-    SortBy,
-    IsAscending,
-    Categories,
-    Search,
-    MinPrice,
-    MaxPrice,
-    IsNew,
-    IsSale,
-    Sizes
+export const getAllProducts = async ({
+    page,
+    eachPage,
+    sortBy,
+    isAscending,
+    categories,
+    search,
+    minPrice,
+    maxPrice,
+    isNew,
+    isSale,
+    sizes
 }: {
-    Page: number;
-    EachPage: number;
-    SortBy?: string;
-    IsAscending?: boolean;
-    Categories?: number[];
-    Search?: string;
-    MinPrice?: number;
-    MaxPrice?: number;
-    IsNew?: boolean;
-    IsSale?: boolean;
-    Sizes?: string[];
+    page: number;
+    eachPage: number;
+    sortBy?: string;
+    isAscending?: boolean;
+    categories?: number[];
+    search?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    isNew?: boolean;
+    isSale?: boolean;
+    sizes?: string[];
 }): Promise<Pagination<Product[]>> => {
-    const cleanedCategories = Categories && Categories.length > 0
-        ? Categories.map(category => category.toString())
+    const cleanedCategories = categories && categories.length > 0
+        ? categories.map(category => category.toString())
         : undefined;
 
     return await fetchPaginatedData(
-        productEndpoint,
+        `${productEndpoint}/manage`,
         {
-            Page,
-            EachPage,
-            SortBy,
-            IsAscending,
-            Categories: cleanedCategories,
-            Search,
-            MinPrice,
-            MaxPrice,
-            IsNew,
-            IsSale,
-            Sizes
+            page,
+            eachPage,
+            sortBy,
+            isAscending,
+            categories: cleanedCategories,
+            search,
+            minPrice,
+            maxPrice,
+            isNew,
+            isSale,
+            sizes
         }
     );
 };

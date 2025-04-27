@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HTMLAttributes, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -42,7 +44,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const { login, setAccessToken, setUser } = useAuthStore(state => state.auth)
   const navigate = useNavigate()
   // Lấy tham số redirect từ URL nếu có
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+  const { redirect } = useSearch<any>({ from: '/(auth)/sign-in' })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
