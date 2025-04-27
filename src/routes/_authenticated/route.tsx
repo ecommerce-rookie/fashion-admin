@@ -3,6 +3,7 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { SearchProvider } from '@/context/search-context'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { CommandMenu } from '@/components/command-menu'
 import { AppSidebar } from '@/components/core/layout/app-sidebar'
 import SkipToMain from '@/components/skip-to-main'
 import { useAuthStore } from '@/stores/authStore'
@@ -34,6 +35,7 @@ function RouteComponent() {
       <SidebarProvider defaultOpen={defaultOpen}>
         <SkipToMain />
         <AppSidebar />
+        <CommandMenu />
         <div
           id='content'
           className={cn(

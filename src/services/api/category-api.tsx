@@ -10,7 +10,7 @@ export const GetAllCategories = async ({
 }: {
     page: number;
     eachPage: number;
-    search: string;
+    search?: string;
 }): Promise<Pagination<Category[]>> => {
     return await fetchPaginatedData(
         categoryEndpoint,

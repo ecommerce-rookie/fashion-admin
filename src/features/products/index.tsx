@@ -5,7 +5,6 @@ import { ProductDialogs } from "./components/product-dialogs";
 import { Main } from "@/components/core/layout/main";
 import { useProductFilter } from "./context/use-filter-product";
 import { ProductExtraButton } from "./components/product-extra-button";
-import { Button } from "@/components/ui/button";
 
 export default function Products() {
 

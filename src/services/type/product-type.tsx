@@ -21,7 +21,7 @@ export type ProductDetail = {
     unitPrice: number
     purchasePrice: number
     description: string | null
-    status: string
+    status: ProductStatus
     categoryId: number
     categoryName: string | null
     quantity: number | null
@@ -41,4 +41,11 @@ export type ProductDetail = {
     createdAt: string
     updatedAt: string
     isDeleted: boolean
+}
+
+export enum ProductStatus {
+    Available = 'Available',
+    OutOfStock = 'OutOfStock',
+    Blocked = 'Blocked',
+    Deleted = 'Deleted',
 }

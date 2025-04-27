@@ -16,3 +16,18 @@ export function formatDate(input: string | number | null | undefined): string {
     year: "numeric",
   });
 }
+
+export function formatCurrency(
+  amount: number | string,
+  currency: string = "VND",
+  locale: string = "vi-VN"
+): string {
+  if (typeof amount === "string") {
+    amount = parseFloat(amount);
+  }
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+  }).format(amount);
+}

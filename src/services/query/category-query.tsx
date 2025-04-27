@@ -9,7 +9,7 @@ export const useCategoriesQuery = ({
 }: {
     page: number;
     eachPage: number;
-    search: string;
+    search?: string;
 }) => {
     return useQuery({
         queryKey: ["categories", page, eachPage, search],
