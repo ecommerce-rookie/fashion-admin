@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -9,14 +10,21 @@ import {
 } from '@/components/ui/dialog'
 import ImageUploader from '@/components/ui/image-upload'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCategoriesQuery } from '@/services/query/category-query'
+import { useCreateProductMutation } from '@/services/query/product-query'
 import { Category } from '@/services/type/category-type'
-import { useQuery } from '@tanstack/react-query'
+import { ProductCreate, ProductSize, ProductStatus } from '@/services/type/product-type'
 import { Row } from '@tanstack/react-table'
-import { Plus, Upload, X } from 'lucide-react'
+import { AlertCircle, Plus, Store, Tag, Upload, X } from 'lucide-react'
 import { useState } from 'react'
+// Removing Zod import
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 
 interface Props<T> {
@@ -29,243 +37,291 @@ interface Props<T> {
 
 export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) {
 
+    const [formData, setFormData] = useState<ProductCreate>({
+        Name: '',
+        UnitPrice: 0,
+        PurchasePrice: 0,
+        Description: '',
+        Quantity: 0,
+        Sizes: [] as ProductSize[],
+        CategoryId: 0,
+        Gender: '',
+        Status: ProductStatus.Available,
+        Files: []
+    });
 
-    const [name, setName] = useState('')
-    const [unitPrice, setUnitPrice] = useState(0)
-    const [purchasePrice, setPurchasePrice] = useState(0)
-    const [description, setDescription] = useState('')
-    const [quantity, setQuantity] = useState(0)
-    const [sizes, setSizes] = useState<string[]>([])
-    const [sizeList, setSizeList] = useState<string[]>(['xs', 's', 'm', 'l', 'xl', 'xxl'])
-    const [category, setCategory] = useState('')
-    const [gender, setGender] = useState('')
-    const [files, setFiles] = useState<File[]>([])
+    const { mutateAsync: createProduct, isPending: isProductCreating } = useCreateProductMutation();
 
     const { data, isLoading } = useCategoriesQuery({
         page: -1,
         eachPage: 100,
         search: ''
-    })
+    });
 
-    const categoryList: Category[] = data ? data.data : []
+    const categoryList: Category[] = data ? data.data : [];
 
-    const isEdit = mode == 'edit'
+    const isEdit = mode === 'edit';
 
-    const handleSelectSize = (selectedSize: string) => {
-        setSizes((prev) => [...prev, selectedSize])
-        setSizeList((prev) => prev.filter((item) => item !== selectedSize))
-    }
+    const handleInputChange = (field: keyof ProductCreate, value: any) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
 
-    const handleRemoveSize = (sizeToRemove: string) => {
-        setSizes((prev) => prev.filter((item) => item !== sizeToRemove))
-        setSizeList((prev) => [...prev, sizeToRemove])
-    }
+    const handleSubmit = async () => {
+        // Manual validation instead of using Zod
+        const errors = [];
+
+        if (!formData.Name) errors.push('Name is required');
+        if (formData.UnitPrice <= 0) errors.push('Unit price must be positive');
+        if (formData.PurchasePrice <= 0) errors.push('Purchase price must be positive');
+        if (formData.Quantity < 0) errors.push('Quantity must be non-negative');
+        if (!formData.Sizes || formData.Sizes.length === 0) errors.push('At least one size must be selected');
+        if (!formData.CategoryId) errors.push('Category is required');
+        if (!formData.Gender) errors.push('Gender is required');
+
+        if (errors.length > 0) {
+            toast.error(errors[0] || 'Please check the form for errors');
+            return;
+        }
+
+        try {
+            await createProduct(formData);
+            toast.success(isEdit ? 'Product updated successfully' : 'Product created successfully');
+            onOpenChange(false);
+        } catch {
+            toast.error('Failed to create product. Please try again.');
+        }
+    };
 
     if (isLoading) {
-        return (null)
+        return null;
     }
 
     return (
         <Dialog
             open={open}
             onOpenChange={(state) => {
-                onOpenChange(state)
+                onOpenChange(state);
             }}
         >
-            <DialogContent className='sm:max-w-lg'>
-                <DialogHeader className='text-left'>
-                    <DialogTitle>{isEdit ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-                    <DialogDescription>
-                        {isEdit ? 'Update the product here. ' : 'Create new product here. '}
-                        Click save when you&apos;re done.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4 w-full overflow-y-auto py-1 pr-4'>
-
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Name</p>
-                        <Input
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder='Enter name'
-                            type='text'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Unit Price</p>
-                        <Input
-                            value={unitPrice}
-                            onChange={(e) => setUnitPrice(Number(e.target.value))}
-                            placeholder="Enter unit price"
-                            type="number"
-                        />
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Purchase Price</p>
-                        <Input
-                            value={purchasePrice}
-                            onChange={(e) => setPurchasePrice(Number(e.target.value))}
-                            placeholder="Enter purchase price"
-                            type="number"
-                        />
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Description</p>
-                        <Input
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder='Enter description'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Quantity</p>
-                        <Input
-                            value={quantity}
-                            onChange={(e) => setQuantity(Number(e.target.value))}
-                            placeholder='Enter quantity'
-                        />
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Category</p>
-                        <Select
-                            value={category}
-                            onValueChange={(e) => setCategory(e)}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Categories" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categoryList.map((item, index) => (
-                                    <SelectItem
-                                        key={index}
-                                        value={item.id.toString()}
-                                    >
-                                        {item.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className='col-span-full flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Sizes</p>
-                        <div className={`grid grid-cols-4 gap-2 `}>
-                            {sizes.map((item) => (
-                                <div key={item} className='flex flex-row bg-black text-white w-full justify-between items-center rounded px-2 py-1'>
-                                    <p className='text-xs font-bold tracking-widest uppercase'>{item}</p>
-                                    <button
-                                        onClick={() => handleRemoveSize(item)}
-                                        className='hover:text-red-500'
-                                    >
-                                        <X size={15} />
-                                    </button>
-                                </div>
-                            ))}
+            <DialogContent className='sm:max-w-2xl'>
+                <DialogHeader className='text-left space-y-2'>
+                    <div className="flex items-center">
+                        <span className='bg-primary/10 p-2 rounded-md mr-3'>
+                            <Store className='h-5 w-5 text-primary' />
+                        </span>
+                        <div>
+                            <DialogTitle className='text-xl'>{isEdit ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                            <DialogDescription className='text-sm opacity-80'>
+                                {isEdit ? 'Update the product here. ' : 'Create new product here. '}
+                                Click save when you're done.
+                            </DialogDescription>
                         </div>
-                        <Select onValueChange={(val) => handleSelectSize(val)}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a size" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sizeList.map((item, index) => (
-                                    <SelectItem
-                                        key={index}
-                                        className='uppercase'
-                                        value={item}
-                                    >
-                                        {item}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                     </div>
-                    <div className='col-span-full flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Gender</p>
-                        <Select
-                            value={gender}
-                            onValueChange={(e) => setGender(e)}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Gender" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={'male'}>
-                                    Male
-                                </SelectItem>
-                                <SelectItem value={'female'}>
-                                    Female
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Separator />
+                </DialogHeader>
+                <ScrollArea className='max-h-[70vh]'>
+                    <div className='grid grid-cols-1 gap-8 w-full py-2 px-1'>
+                        {/* Product images */}
+                        <Card className="border-none shadow-sm">
+                            <CardContent className='p-4 bg-muted/30 rounded-lg'>
+                                <div className='flex flex-col gap-3'>
+                                    <h3 className='text-sm font-semibold flex items-center'>
+                                        <Upload className='h-4 w-4 mr-2' /> Product Images
+                                    </h3>
+                                    <ImageUploader
+                                        showModeToggle={false}
+                                        defaultMode='multiple'
+                                        onChange={(files) => handleInputChange('Files', Array.isArray(files) ? files : [files].filter(Boolean))}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                    <div className='col-span-full flex flex-col gap-2'>
-                        <p className='text-sm font-semibold tracking-wider'>Images</p>
-                        <label htmlFor="file-upload">
-                            <div className="flex flex-row gap-4 items-center bg-black px-3 py-2 rounded hover:bg-[#333] cursor-pointer w-fit">
-                                <p className='text-white text-xs font-semibold tracking-wider'>
-                                    {files.length === 0 ? 'Choose Images' : 'Add Images'}
-                                </p>
-                                {files.length === 0 ? (
-                                    <Upload size={17} className='text-white' />
-                                ) : (
-                                    <Plus size={17} className='text-white' />
-                                )}
+                        {/* Product details */}
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            {/* Left column */}
+                            <div className='space-y-4'>
+                                <div className='flex flex-col gap-2'>
+                                    <label className='text-sm font-medium'>Name</label>
+                                    <Input
+                                        value={formData.Name}
+                                        onChange={(e) => handleInputChange('Name', e.target.value)}
+                                        placeholder='Enter product name'
+                                        type='text'
+                                        className='border-slate-200 focus-visible:ring-primary/30'
+                                    />
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <label className='text-sm font-medium'>Description</label>
+                                    <Input
+                                        value={formData.Description}
+                                        onChange={(e) => handleInputChange('Description', e.target.value)}
+                                        placeholder='Enter product description'
+                                        className='border-slate-200 focus-visible:ring-primary/30'
+                                    />
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <label className='text-sm font-medium'>Category</label>
+                                    <Select
+                                        value={formData.CategoryId ? formData.CategoryId.toString() : ''}
+                                        onValueChange={(e) => handleInputChange('CategoryId', Number(e))}
+                                    >
+                                        <SelectTrigger className="w-full border-slate-200 focus-visible:ring-primary/30">
+                                            <SelectValue placeholder="Select a category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categoryList.map((item) => (
+                                                <SelectItem
+                                                    key={item.id}
+                                                    value={item.id.toString()}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Tag className="h-3.5 w-3.5" />
+                                                        {item.name}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <label className='text-sm font-medium'>Gender</label>
+                                    <Select
+                                        value={formData.Gender}
+                                        onValueChange={(e) => handleInputChange('Gender', e)}
+                                    >
+                                        <SelectTrigger className="w-full border-slate-200 focus-visible:ring-primary/30">
+                                            <SelectValue placeholder="Select gender" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={'Male'}>
+                                                <div className="flex items-center gap-2">
+                                                    Male
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value={'Female'}>
+                                                <div className="flex items-center gap-2">
+                                                    Female
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                        </label>
 
-                        <input
-                            id="file-upload"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                                if (e.target.files) {
-                                    const newFiles = Array.from(e.target.files);
-                                    setFiles((prev) => [...prev, ...newFiles]);
-                                    e.target.value = '';
-                                }
-                            }}
-                        />
-                        {files.length > 0 && (
-                            <div className="grid grid-cols-4 gap-4 mt-4">
-                                {files.slice(0, 3).map((file, index) => (
-                                    <div
-                                        key={index}
-                                        className="relative group border rounded overflow-hidden"
-                                    >
-                                        <img
-                                            src={URL.createObjectURL(file)}
-                                            alt={`preview-${index}`}
-                                            className="object-cover w-full h-24"
+                            {/* Right column */}
+                            <div className='space-y-4'>
+                                <div className='grid grid-cols-2 gap-4'>
+                                    <div className='flex flex-col gap-2'>
+                                        <label className='text-sm font-medium'>Unit Price ($)</label>
+                                        <Input
+                                            value={formData.UnitPrice}
+                                            onChange={(e) => handleInputChange('UnitPrice', Number(e.target.value))}
+                                            placeholder="0.00"
+                                            type="number"
+                                            className='border-slate-200 focus-visible:ring-primary/30'
                                         />
-                                        <button
-                                            onClick={() =>
-                                                setFiles((prev) => prev.filter((_, i) => i !== index))
-                                            }
-                                            className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={14} />
-                                        </button>
                                     </div>
-                                ))}
-                                {files.length > 3 && (
-                                    <div className="flex items-center justify-center border rounded bg-gray-100 text-gray-600 font-semibold text-lg">
-                                        +{files.length - 3}
+                                    <div className='flex flex-col gap-2'>
+                                        <label className='text-sm font-medium'>Purchase Price ($)</label>
+                                        <Input
+                                            value={formData.PurchasePrice}
+                                            onChange={(e) => handleInputChange('PurchasePrice', Number(e.target.value))}
+                                            placeholder="0.00"
+                                            type="number"
+                                            className='border-slate-200 focus-visible:ring-primary/30'
+                                        />
                                     </div>
-                                )}
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <label className='text-sm font-medium'>Quantity</label>
+                                    <Input
+                                        value={formData.Quantity}
+                                        onChange={(e) => handleInputChange('Quantity', Number(e.target.value))}
+                                        placeholder='Enter quantity'
+                                        type='number'
+                                        className='border-slate-200 focus-visible:ring-primary/30'
+                                    />
+                                </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <div className="flex items-center justify-between">
+                                        <label className='text-sm font-medium'>Sizes</label>
+                                        <Badge variant="outline" className="text-xs font-normal py-0 px-2">
+                                            {formData.Sizes?.length || 0}/6
+                                        </Badge>
+                                    </div>
+
+                                    <div className={`grid grid-cols-3 gap-2 mb-2`}>
+                                        {formData.Sizes?.map((item) => (
+                                            <div key={item} className='flex items-center justify-between bg-primary/10 rounded-md px-3 py-1.5 text-xs'>
+                                                <span className='font-semibold tracking-wider uppercase'>{item}</span>
+                                                <button
+                                                    onClick={() => handleInputChange('Sizes', formData.Sizes?.filter((size) => size !== item) || [])}
+                                                    className='hover:text-destructive'
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className={cn(
+                                        "w-full p-0.5 grid grid-cols-6 gap-1 rounded-md border border-slate-200",
+                                        (formData.Sizes?.length || 0) >= 6 && "opacity-50"
+                                    )}>
+                                        {Object.values(ProductSize).map((size) => (
+                                            <button
+                                                key={size}
+                                                disabled={(formData.Sizes?.length || 0) >= 6 || formData.Sizes?.includes(size)}
+                                                onClick={() => handleInputChange('Sizes', [...(formData.Sizes || []), size])}
+                                                className={cn(
+                                                    "uppercase text-xs py-2 rounded",
+                                                    formData.Sizes?.includes(size)
+                                                        ? "bg-primary text-white font-medium"
+                                                        : "hover:bg-primary/10"
+                                                )}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        )}
-
+                        </div>
                     </div>
-                </div>
+                </ScrollArea>
 
-                <DialogFooter>
-                    <Button>
-                        Save changes
+                <DialogFooter className="pt-2">
+                    {!formData.Name || !formData.CategoryId || !formData.Gender || !formData.Sizes?.length ? (
+                        <div className="flex items-center text-amber-600 text-xs mr-auto mb-1">
+                            <AlertCircle className="h-3.5 w-3.5 mr-1" />
+                            Please fill in all required fields
+                        </div>
+                    ) : null}
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isProductCreating || !formData.Name || !formData.CategoryId || !formData.Gender || !formData.Sizes?.length}
+                        className="gap-1"
+                    >
+                        {isProductCreating ? (
+                            <>Processing...</>
+                        ) : (
+                            <>
+                                <Plus className="h-4 w-4" />
+                                {isEdit ? 'Update Product' : 'Create Product'}
+                            </>
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

@@ -1,310 +1,161 @@
-// "use client";
-
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Category } from "@/services/type/category-type";
+import { useCreateCategoryMutation, useUpdateCategoryMutation } from "@/services/query/category-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
-// import { Button } from "@highschool/ui/components/ui/button";
-// import { Input } from "@highschool/ui/components/ui/input";
-// import { HighSchoolAssets, UserPreview } from "@highschool/interfaces";
-// import {
-//   Sheet,
-//   SheetContent,
-//   SheetDescription,
-//   SheetFooter,
-//   SheetHeader,
-//   SheetTitle,
-// } from "@highschool/ui/components/ui/sheet";
-// import { Label } from "@highschool/ui/components/ui/label";
-// import {
-//   Tooltip,
-//   TooltipContent,
-//   TooltipProvider,
-//   TooltipTrigger,
-// } from "@highschool/ui/components/ui/tooltip";
-// import { Textarea } from "@highschool/ui/components/ui/textarea";
-// import { IconRepeat } from "@tabler/icons-react";
-// import { useState } from "react";
-// import {
-//   useCheckUsernameQuery,
-//   useCreateUserMutation,
-//   useUploaderMutation,
-// } from "@highschool/react-query/queries";
-// import { toast } from "sonner";
-// import { useDebounceValue } from "@highschool/hooks";
-// import { cn } from "@highschool/ui/lib/utils";
+// Form schema validation using zod
+const categoryFormSchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+  description: z.string().optional(),
+});
 
-// import ImageUploader from "@/components/ui/image-upload";
-// import { generatePassword } from "@/domain/utils/password";
-// import { PasswordInput } from "@/components/ui/password-input";
-// import { AnimatedCheckCircle } from "@/components/core/common/animated-icons/animated-check-circle";
-// import { AnimatedXCircle } from "@/components/core/common/animated-icons/animated-x-icon";
-// import { useTable } from "@/stores/table-context";
+type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
 interface Props {
   currentRow?: Category;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
 export function CategoryActionDialog({ currentRow, open, onOpenChange }: Props) {
-  return <div>okok</div>
+  const isEditing = !!currentRow;
+
+  // Initialize the form with react-hook-form and zod validation
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: {
+      name: currentRow?.name || "",
+      description: currentRow?.description || "",
+    },
+  });
+
+  // Reset form when the dialog opens or the currentRow changes
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: currentRow?.name || "",
+        description: currentRow?.description || "",
+      });
+    }
+  }, [form, currentRow, open]);
+
+  // Get mutation hooks for creating and updating categories
+  const createCategory = useCreateCategoryMutation();
+  const updateCategory = useUpdateCategoryMutation();
+
+  // Form submission handler
+  const onSubmit = async (data: CategoryFormValues) => {
+    try {
+      if (isEditing && currentRow) {
+        // Update existing category
+        await updateCategory.mutateAsync({
+          id: currentRow.id.toString(),
+          name: data.name,
+          description: data.description || "",
+        });
+      } else {
+        // Create new category
+        await createCategory.mutateAsync({
+          name: data.name,
+          description: data.description || "",
+        });
+      }
+      // Close dialog on successful submission
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation hooks
+      console.error("Error submitting form:", error);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Edit Category" : "Create New Category"}</DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter category name"
+                      {...field}
+                      disabled={createCategory.isPending || updateCategory.isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter category description (optional)"
+                      {...field}
+                      disabled={createCategory.isPending || updateCategory.isPending}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={createCategory.isPending || updateCategory.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createCategory.isPending || updateCategory.isPending}
+              >
+                {createCategory.isPending || updateCategory.isPending
+                  ? "Saving..."
+                  : isEditing
+                    ? "Save Changes"
+                    : "Create Category"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }
-
-
-// // export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
-// //   const { open: typeOpen } = useTable();
-// //   const title =
-// //     typeOpen === "add"
-// //       ? "Add Profile"
-// //       : typeOpen === "edit"
-// //         ? "Edit Profile"
-// //         : "View Profile";
-
-// //   const { mutate: createUser, isPending: isCreating } = useCreateUserMutation();
-
-// //   const [username, setUsername] = useState<string>(currentRow?.username ?? "");
-// //   const debouncedUsername = useDebounceValue(username, 1000);
-// //   const [email, setEmail] = useState<string>(currentRow?.email ?? "");
-// //   const [password, setPassword] = useState<string>("");
-// //   const [bio, setBio] = useState<string>("");
-// //   const [fullName, setFullName] = useState<string>(currentRow?.fullname ?? "");
-
-// //   const checkUsername = useCheckUsernameQuery({
-// //     username: debouncedUsername,
-// //   });
-
-// //   const [singleFile, setSingleFile] = useState<File | null>(null);
-
-// //   const uploadImage = useUploaderMutation();
-
-// //   const clearFields = () => {
-// //     setUsername("");
-// //     setEmail("");
-// //     setPassword("");
-// //     setBio("");
-// //     setFullName("");
-// //     setSingleFile(null);
-// //   };
-
-// //   const handleUpload = async () => {
-// //     if (singleFile) {
-// //       toast.info("Uploading image...");
-
-// //       try {
-// //         // Simulate upload delay
-// //         const data = await uploadImage.mutateAsync(
-// //           {
-// //             image: singleFile,
-// //             fileName: title,
-// //             folder: HighSchoolAssets.Test,
-// //             presetName: "avatar",
-// //           },
-// //           {
-// //             onSuccess: (data) => {
-// //               return data;
-// //             },
-// //           },
-// //         );
-
-// //         toast.success("Image uploaded successfully");
-
-// //         return data.data ?? "";
-// //       } catch {
-// //         toast.error("Failed to upload image");
-
-// //         return "";
-// //       }
-// //     }
-
-// //     return "";
-// //   };
-
-// //   const validationFields = () => {
-// //     if (!username && !email && !password && !fullName && !singleFile) {
-// //       return "Please fill all required fields";
-// //     }
-
-// //     if (!/^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/.test(email)) {
-// //       return "Invalid email format";
-// //     }
-
-// //     if (username.length < 3) {
-// //       return "Username must be at least 3 characters";
-// //     }
-
-// //     if (checkUsername.data) {
-// //       return "Username already exists";
-// //     }
-
-// //     if (fullName.length < 3) {
-// //       return "Full name must be at least 3 characters";
-// //     }
-
-// //     const passwordRegex =
-// //       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-// //     if (!passwordRegex.test(password)) {
-// //       return "Password must contain at least 8 characters, one uppercase, one lowercase, one number and one special character";
-// //     }
-
-// //     if (!singleFile) {
-// //       return "Please upload an image";
-// //     }
-
-// //     return "";
-// //   };
-
-// //   const handleImageChange = (file: File | null) => {
-// //     if (file === null) {
-// //       setSingleFile(null);
-// //     } else {
-// //       setSingleFile(file);
-// //     }
-// //   };
-
-// //   const handleSaveChange = async () => {
-// //     const error = validationFields();
-
-// //     if (error !== "") {
-// //       toast.error(error);
-
-// //       return;
-// //     }
-// //     const profilePicture = await handleUpload();
-
-// //     createUser({
-// //       user: {
-// //         username,
-// //         email,
-// //         bio,
-// //         fullName,
-// //         password,
-// //         profilePicture: profilePicture,
-// //       },
-// //     });
-
-// //     clearFields();
-// //     onOpenChange(false);
-// //   };
-
-// //   return (
-// //     <Sheet open={open} onOpenChange={onOpenChange}>
-// //       <SheetContent className="overflow-y-auto">
-// //         <SheetHeader>
-// //           <SheetTitle>{title}</SheetTitle>
-// //           <SheetDescription>
-// //             Make changes to your profile here. Click save when you&apos;re done.
-// //           </SheetDescription>
-// //         </SheetHeader>
-// //         <div className="grid gap-4 overflow-y-auto py-4">
-// //           <div>
-// //             <Label className="text-sm font-semibold">
-// //               Username <span className="text-primary">(required)</span>
-// //             </Label>
-// //             <div className="relative">
-// //               <Input
-// //                 placeholder="Username"
-// //                 type="text"
-// //                 value={username}
-// //                 onChange={(e) => setUsername(e.target.value)}
-// //               />
-// //               <div
-// //                 className={cn(
-// //                   "flex h-full items-center justify-center px-3 absolute top-0 right-0",
-// //                   checkUsername.isLoading
-// //                     ? "text-gray-200 dark:text-gray-700"
-// //                     : checkUsername.data === false
-// //                       ? "text-destructive"
-// //                       : "text-emerald-500",
-// //                 )}
-// //                 style={{
-// //                   color: checkUsername.isLoading
-// //                     ? "gray"
-// //                     : checkUsername.data
-// //                       ? "red"
-// //                       : "green",
-// //                 }}
-// //               >
-// //                 {checkUsername.isLoading && checkUsername.data === false ? (
-// //                   <AnimatedCheckCircle />
-// //                 ) : (
-// //                   <AnimatedXCircle />
-// //                 )}
-// //               </div>
-// //             </div>
-// //           </div>
-// //           <div>
-// //             <Label className="text-sm font-semibold">
-// //               Email <span className="text-primary">(required)</span>
-// //             </Label>
-// //             <Input
-// //               placeholder="Email"
-// //               type="email"
-// //               value={email}
-// //               onChange={(e) => setEmail(e.target.value)}
-// //             />
-// //           </div>
-// //           <div>
-// //             <Label className="flex justify-between text-sm font-semibold">
-// //               <div>
-// //                 Password <span className="text-primary">(required)</span>
-// //               </div>
-
-// //               <TooltipProvider>
-// //                 <Tooltip>
-// //                   <TooltipTrigger asChild>
-// //                     <IconRepeat
-// //                       className="mr-2 cursor-pointer"
-// //                       size={14}
-// //                       onClick={() => setPassword(generatePassword())}
-// //                     />
-// //                   </TooltipTrigger>
-// //                   <TooltipContent>
-// //                     <p>Generate Password</p>
-// //                   </TooltipContent>
-// //                 </Tooltip>
-// //               </TooltipProvider>
-// //             </Label>
-// //             <PasswordInput
-// //               placeholder="Password"
-// //               value={password}
-// //               onChange={(e) => setPassword(e.target.value)}
-// //             />
-// //           </div>
-// //           <div>
-// //             <Label className="text-sm font-semibold">
-// //               Full name <span className="text-primary">(required)</span>
-// //             </Label>
-// //             <Input
-// //               placeholder="Full name"
-// //               type="text"
-// //               value={fullName}
-// //               onChange={(e) => setFullName(e.target.value)}
-// //             />
-// //           </div>
-// //           <div>
-// //             <Label className="text-sm font-semibold">Bio</Label>
-// //             <Textarea
-// //               placeholder="Bio"
-// //               value={bio}
-// //               onChange={(e) => setBio(e.target.value)}
-// //             />
-// //           </div>
-// //           <div>
-// //             <ImageUploader
-// //               defaultMode="single"
-// //               label="Avatar"
-// //               maxImages={1}
-// //               showModeToggle={false}
-// //               value={currentRow?.profilePicture ?? ""}
-// //               onChange={(e) => handleImageChange(Array.isArray(e) ? e[0] : e)}
-// //             />
-// //           </div>
-// //         </div>
-// //         <SheetFooter>
-// //           <Button type="submit" onClick={handleSaveChange}>
-// //             Save changes
-// //           </Button>
-// //         </SheetFooter>
-// //       </SheetContent>
-// //     </Sheet>
-// //   );
-// // }

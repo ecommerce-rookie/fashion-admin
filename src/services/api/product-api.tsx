@@ -1,7 +1,7 @@
 import { productEndpoint } from "../endpoint";
 import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
 import axiosServices, { axiosClientUpload } from "@/lib/axios";
-import { ProductDetail, ProductPreview } from "../type/product-type";
+import { ProductCreate, ProductDetail, ProductPreview, ProductUpdate } from "../type/product-type";
 
 
 export const getAllProducts = async ({
@@ -58,7 +58,7 @@ export const getProductBySlug = async (slug: string): Promise<ResponseModel<Prod
     return response.data
 }
 
-export const CreateProduct = async (data: FormData): Promise<ResponseModel<string>> => {
+export const CreateProduct = async (data: ProductCreate): Promise<ResponseModel<string>> => {
     const response = await axiosClientUpload.post(productEndpoint, data);
 
     return response.data;
@@ -69,7 +69,7 @@ export const UpdateProduct = async ({
     data
 }: {
     slug: string;
-    data: FormData;
+    data: ProductUpdate;
 }): Promise<ResponseModel<string>> => {
     const response = await axiosClientUpload.patch(`${productEndpoint}/${slug}`, data);
 

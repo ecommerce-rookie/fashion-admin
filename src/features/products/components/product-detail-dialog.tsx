@@ -4,7 +4,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { ProductDetail } from "@/services/type/product-type";
+import { ProductDetail, ProductStatus } from "@/services/type/product-type";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,8 +48,8 @@ export function ProductDetailDialog({
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground mb-1">Status</p>
                                     <Badge variant={
-                                        currentRow.status === "ACTIVE" ? "default" :
-                                            currentRow.status === "INACTIVE" ? "secondary" : "destructive"
+                                        currentRow.status === ProductStatus.Available ? "default" :
+                                            currentRow.status === ProductStatus.OutOfStock ? "secondary" : "destructive"
                                     }>
                                         {currentRow.status}
                                     </Badge>

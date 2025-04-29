@@ -26,7 +26,7 @@ export type ProductDetail = {
     categoryName: string | null
     quantity: number | null
     colors: string[]
-    sizes: string[]
+    sizes: ProductSize[]
     gender: string
     images: string[]
     author: {
@@ -48,4 +48,36 @@ export enum ProductStatus {
     OutOfStock = 'OutOfStock',
     Blocked = 'Blocked',
     Deleted = 'Deleted',
+}
+
+export enum ProductSize {
+    XS = 'XS',
+    S = 'S',
+    M = 'M',
+    L = 'L',
+    XL = 'XL',
+    XXL = 'XXL',
+}
+
+export type ProductCreate = {
+    Name: string
+    UnitPrice: number
+    PurchasePrice: number
+    Description: string
+    Status: ProductStatus
+    CategoryId: number
+    Quantity: number
+    Sizes?: ProductSize[]
+    Gender: string
+    Files?: File[] | ImageUpload[]
+}
+
+export type ProductUpdate = ProductCreate & {
+    slug: string
+    images?: string[]
+}
+
+export type ImageUpload = {
+    file: File
+    order: number
 }

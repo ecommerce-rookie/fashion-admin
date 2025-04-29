@@ -4,43 +4,80 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useProductBySlugQuery } from "@/services/query/product-query";
+import { useProductBySlugQuery, useUpdateProductMutation } from "@/services/query/product-query";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Edit2, Save, Trash2, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 import { useCategoriesQuery } from "@/services/query/category-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ProductStatus } from "@/services/type/product-type";
+import { ProductSize, ProductStatus, ProductUpdate } from "@/services/type/product-type";
 import { IconStarFilled, IconUser } from "@tabler/icons-react";
 import ImageUploader from "@/components/ui/image-upload";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productUpdateSchema, ProductUpdateFormValues } from "./product-update-schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { toast } from "sonner";
 
 export default function ProductDetail() {
     const { id } = useParams({ from: "/_authenticated/products/$id" });
-    const [isEditing, setIsEditing] = useState(false)
+    const [isEditing, setIsEditing] = useState(false);
 
     const { data, isLoading: isProductLoading } = useProductBySlugQuery(id || "");
     const { data: categories, isLoading: isCategoryLoading } = useCategoriesQuery({
         page: -1,
         eachPage: 10
     });
+    const { mutateAsync: updateProduct } = useUpdateProductMutation();
 
     const product = data?.data;
-
-    const [status, setStatus] = useState<ProductStatus>(product?.status ?? ProductStatus.Available)
-    const [selectedSizes, setSelectedSizes] = useState(product?.sizes ?? [])
     const navigate = useNavigate();
-
     const isLoading = isProductLoading || isCategoryLoading;
 
+    // Create form with Zod validation
+    const form = useForm<ProductUpdateFormValues>({
+        resolver: zodResolver(productUpdateSchema),
+        defaultValues: {
+            Name: "",
+            Description: "",
+            CategoryId: 0,
+            Gender: "",
+            UnitPrice: 0,
+            PurchasePrice: 0,
+            Quantity: 0,
+            Status: ProductStatus.Available,
+            Sizes: [],
+            slug: "",
+            images: [],
+            Files: []
+        },
+        mode: "onChange"
+    });
+
+    // Update form values when product data is loaded
     useEffect(() => {
         if (!isLoading && !product) {
             navigate({ to: "/products" });
+        } else if (!isLoading && product) {
+            form.reset({
+                Name: product.name || "",
+                Description: product.description || "",
+                CategoryId: product.categoryId,
+                Gender: product.gender,
+                UnitPrice: product.unitPrice,
+                PurchasePrice: product.purchasePrice,
+                Quantity: product.quantity || 0,
+                Status: product.status,
+                Sizes: product.sizes,
+                slug: id || "",
+                images: product.images || [],
+                Files: []
+            });
         }
-    }, [isLoading, product, navigate]);
+    }, [isLoading, product, navigate, form, id]);
 
     if (isLoading) {
         return (
@@ -63,16 +100,55 @@ export default function ProductDetail() {
     }
 
     const toggleEditing = () => {
-        setIsEditing(!isEditing)
-    }
-
-    const handleSizeToggle = (size: string) => {
-        if (selectedSizes.includes(size)) {
-            setSelectedSizes(selectedSizes.filter((s) => s !== size))
-        } else {
-            setSelectedSizes([...selectedSizes, size])
+        setIsEditing(!isEditing);
+        if (!isEditing) {
+            // Reset form when entering edit mode to ensure latest data
+            if (product) {
+                form.reset({
+                    Name: product.name || "",
+                    Description: product.description || "",
+                    CategoryId: product.categoryId,
+                    Gender: product.gender,
+                    UnitPrice: product.unitPrice,
+                    PurchasePrice: product.purchasePrice,
+                    Quantity: product.quantity || 0,
+                    Status: product.status,
+                    Sizes: product.sizes,
+                    slug: id || "",
+                    images: product.images || [],
+                    Files: []
+                });
+            }
         }
-    }
+    };
+
+    // Handle form submission
+    const onSubmit = async (values: ProductUpdateFormValues) => {
+        if (!product) return;
+
+        try {
+            const productUpdateData: ProductUpdate = {
+                ...values,
+                slug: id || "",
+                Files: values.Files?.map((fileObj) => fileObj.file).filter((file): file is File => !!file)
+            };
+
+            await updateProduct({ slug: id || "", data: productUpdateData });
+            setIsEditing(false);
+            // Show success notification or feedback here
+        } catch {
+            toast.error("Failed to update product. Please try again.");
+        }
+    };
+
+    const handleSizeToggle = (size: ProductSize) => {
+        const currentSizes = form.getValues("Sizes");
+        if (currentSizes.includes(size)) {
+            form.setValue("Sizes", currentSizes.filter(s => s !== size), { shouldValidate: true });
+        } else {
+            form.setValue("Sizes", [...currentSizes, size], { shouldValidate: true });
+        }
+    };
 
     return (
         <Main>
@@ -95,7 +171,11 @@ export default function ProductDetail() {
                                     <X className="mr-2 h-4 w-4" />
                                     Cancel
                                 </Button>
-                                <Button className="h-9">
+                                <Button
+                                    className="h-9"
+                                    onClick={form.handleSubmit(onSubmit)}
+                                    disabled={!form.formState.isValid}
+                                >
                                     <Save className="mr-2 h-4 w-4" />
                                     Save Changes
                                 </Button>
@@ -117,16 +197,32 @@ export default function ProductDetail() {
                 <div className="mt-3 flex items-center justify-between">
                     <div className="w-full max-w-xl">
                         {isEditing ? (
-                            <Input defaultValue="Urban Striped Men's Shirt" className="text-xl font-bold h-10" />
+                            <FormProvider {...form}>
+                                <FormField
+                                    control={form.control}
+                                    name="Name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    className="text-xl font-bold h-10"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </FormProvider>
                         ) : (
                             <h1 className="text-2xl font-bold tracking-tight">{product?.name}</h1>
                         )}
                         <div className="mt-1 flex items-center gap-3">
                             <Badge
-                                variant={status === "Available" ? "outline" : "default"}
+                                variant={form.getValues("Status") === ProductStatus.Available ? "outline" : "default"}
                                 className="rounded-md px-2 py-1 text-xs font-medium"
                             >
-                                {status}
+                                {form.getValues("Status")}
                             </Badge>
                             <span className="text-sm text-muted-foreground">ID: {product?.id}</span>
                         </div>
@@ -135,289 +231,366 @@ export default function ProductDetail() {
             </div>
 
             {/* Content */}
-            <main className="flex-1 py-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Left Column */}
-                    <div className="space-y-6">
-                        {/* Basic Information */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="description" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                            Description
-                                        </Label>
-                                        {isEditing ? (
-                                            <Textarea
-                                                id="description"
-                                                defaultValue={product?.description ?? ""}
-                                                rows={4}
+            <FormProvider {...form}>
+                <Form {...form}>
+                    <form className="flex-1 py-6">
+                        <div className="grid gap-6 md:grid-cols-2">
+                            {/* Left Column */}
+                            <div className="space-y-6">
+                                {/* Basic Information */}
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="Description"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-sm font-medium text-muted-foreground">Description</FormLabel>
+                                                        <FormControl>
+                                                            {isEditing ? (
+                                                                <Textarea
+                                                                    {...field}
+                                                                    rows={4}
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm">
+                                                                    {product?.description ?? "No description available."}
+                                                                </p>
+                                                            )}
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        ) : (
-                                            <p className="text-sm">
-                                                {product?.description ?? "No description available."}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="category" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                                Category
-                                            </Label>
-                                            {isEditing ? (
-                                                <Select defaultValue={product?.categoryId.toString()}>
-                                                    <SelectTrigger id="category">
-                                                        <SelectValue placeholder="Select category" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {categories?.data.map((category) => (
-                                                            <SelectItem key={category.id} value={category.id.toString()}>
-                                                                {category.name} (ID: {category.id})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <p className="text-sm">Men&apos;s Clothing (ID: 3)</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="gender" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                                Gender
-                                            </Label>
-                                            {isEditing ? (
-                                                <Select defaultValue={product?.gender}>
-                                                    <SelectTrigger id="gender">
-                                                        <SelectValue placeholder="Select gender" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Male">Male</SelectItem>
-                                                        <SelectItem value="Female">Female</SelectItem>
-                                                        <SelectItem value="Unisex">Unisex</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <p className="text-sm">{product?.gender}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
 
-                        {/* Pricing & Inventory */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                <h2 className="text-lg font-semibold mb-4">Pricing & Inventory</h2>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="unitPrice" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                                Unit Price
-                                            </Label>
-                                            {isEditing ? (
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                                    <Input id="unitPrice" value={product?.unitPrice} className="pl-7" />
-                                                </div>
-                                            ) : (
-                                                <p className="text-lg font-semibold">
-                                                    {formatCurrency(product?.unitPrice ?? 0)}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <Label
-                                                htmlFor="purchasePrice"
-                                                className="text-sm font-medium text-muted-foreground mb-1.5 block"
-                                            >
-                                                Purchase Price
-                                            </Label>
-                                            {isEditing ? (
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                                    <Input id="purchasePrice" value={product?.purchasePrice} className="pl-7" />
-                                                </div>
-                                            ) : (
-                                                <p className="text-lg font-semibold">{formatCurrency(product?.purchasePrice ?? 0)}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="quantity" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                                Quantity
-                                            </Label>
-                                            {isEditing ? (
-                                                <Input id="quantity" type="number" value={product?.quantity ?? 0} min="0" />
-                                            ) : (
-                                                <p className="text-lg font-semibold">{product?.quantity} units</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="status" className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                                Status
-                                            </Label>
-                                            {isEditing ? (
-                                                <Select defaultValue={status} onValueChange={(value) => setStatus(value as ProductStatus)}>
-                                                    <SelectTrigger id="status">
-                                                        <SelectValue placeholder="Select status" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {
-                                                            Object.values(ProductStatus).map((status) => (
-                                                                <SelectItem key={status} value={status}>
-                                                                    {status}
-                                                                </SelectItem>
-                                                            ))
-                                                        }
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <p className="text-sm font-medium">
-                                                    <Badge
-                                                        variant={status === "Available" ? "outline" : "default"}
-                                                        className="rounded-md px-2 py-1 text-xs font-medium"
-                                                    >
-                                                        {status}
-                                                    </Badge>
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Metadata */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                <h2 className="text-lg font-semibold mb-4">Metadata</h2>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <h3 className="text-sm font-medium text-muted-foreground">Created At</h3>
-                                            <p className="mt-1 text-sm">{formatDate(product?.createdAt)}</p>
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-medium text-muted-foreground">Updated At</h3>
-                                            <p className="mt-1 text-sm">{formatDate(product?.updatedAt)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="flex items-center space-x-1">
-                                            <h3 className="text-sm font-medium text-muted-foreground">Star: </h3>
-                                            <p className="text-sm">{product?.star}</p>
-                                            <IconStarFilled size={16} />
-                                        </div>
-                                        <div className="flex items-center space-x-1">
-                                            <h3 className="text-sm font-medium text-muted-foreground">Reviews: </h3>
-                                            <p className="text-sm">{product?.reviewCount}</p>
-                                            <IconUser size={16} />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={product?.author?.avatar ?? ""} alt="Author Avatar" />
-                                                <AvatarFallback className="text-xs">CC</AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-sm">{product?.author?.firstName == null ? "" : " " + product?.author.lastName}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                        {/* Product Images */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                {isEditing ? (
-                                    <ImageUploader
-                                        defaultMode="multiple"
-                                        showModeToggle={false}
-                                        value={product?.images ?? []}
-                                        label="Upload Product Images"
-                                    />
-                                ) : (
-                                    <>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-lg font-semibold">Product Images</h2>
-                                        </div>
-                                        <div className="space-y-3">
-                                            {product?.images.map((image, index) => (
-                                                <div key={index} className="flex items-center gap-3 border rounded-md p-2">
-                                                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                                                        <img
-                                                            src={image}
-                                                            alt={`Product ${index}`}
-                                                            width={64}
-                                                            height={64}
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-medium truncate">product-image-{index}.jpg</p>
-                                                        <p className="text-xs text-muted-foreground">800 × 600 • 245 KB</p>
-                                                    </div>
-                                                    {isEditing && (
-                                                        <div className="flex items-center gap-2">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                <Edit2 className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="CategoryId"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Category</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <Select
+                                                                        value={field.value.toString()}
+                                                                        onValueChange={(value) => field.onChange(parseInt(value))}
+                                                                    >
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select category" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {categories?.data.map((category) => (
+                                                                                <SelectItem key={category.id} value={category.id.toString()}>
+                                                                                    {category.name} (ID: {category.id})
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <p className="text-sm">{categories?.data.find(c => c.id === product?.categoryId)?.name || 'Unknown'} (ID: {product?.categoryId})</p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
                                                     )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="Gender"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Gender</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <Select value={field.value} onValueChange={field.onChange}>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select gender" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="Male">Male</SelectItem>
+                                                                            <SelectItem value="Female">Female</SelectItem>
+                                                                            <SelectItem value="Unisex">Unisex</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <p className="text-sm">{product?.gender}</p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Pricing & Inventory */}
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h2 className="text-lg font-semibold mb-4">Pricing & Inventory</h2>
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="UnitPrice"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Unit Price</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <div className="relative">
+                                                                        <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                                                                        <Input
+                                                                            {...field}
+                                                                            type="number"
+                                                                            className="pl-7"
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-lg font-semibold">
+                                                                        {formatCurrency(product?.unitPrice ?? 0)}
+                                                                    </p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="PurchasePrice"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Purchase Price</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <div className="relative">
+                                                                        <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                                                                        <Input
+                                                                            {...field}
+                                                                            type="number"
+                                                                            className="pl-7"
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-lg font-semibold">{formatCurrency(product?.purchasePrice ?? 0)}</p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="Quantity"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Quantity</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <Input
+                                                                        {...field}
+                                                                        type="number"
+                                                                        min="0"
+                                                                    />
+                                                                ) : (
+                                                                    <p className="text-lg font-semibold">{product?.quantity} units</p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="Status"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-sm font-medium text-muted-foreground">Status</FormLabel>
+                                                            <FormControl>
+                                                                {isEditing ? (
+                                                                    <Select value={field.value} onValueChange={field.onChange}>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select status" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {Object.values(ProductStatus).map((status) => (
+                                                                                <SelectItem key={status} value={status}>
+                                                                                    {status}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <p className="text-sm font-medium">
+                                                                        <Badge
+                                                                            variant={product?.status === ProductStatus.Available ? "outline" : "default"}
+                                                                            className="rounded-md px-2 py-1 text-xs font-medium"
+                                                                        >
+                                                                            {product?.status}
+                                                                        </Badge>
+                                                                    </p>
+                                                                )}
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Metadata */}
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h2 className="text-lg font-semibold mb-4">Metadata</h2>
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-muted-foreground">Created At</h3>
+                                                    <p className="mt-1 text-sm">{formatDate(product?.createdAt)}</p>
                                                 </div>
-                                            ))}
+                                                <div>
+                                                    <h3 className="text-sm font-medium text-muted-foreground">Updated At</h3>
+                                                    <p className="mt-1 text-sm">{formatDate(product?.updatedAt)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div className="flex items-center space-x-1">
+                                                    <h3 className="text-sm font-medium text-muted-foreground">Star: </h3>
+                                                    <p className="text-sm">{product?.star}</p>
+                                                    <IconStarFilled size={16} />
+                                                </div>
+                                                <div className="flex items-center space-x-1">
+                                                    <h3 className="text-sm font-medium text-muted-foreground">Reviews: </h3>
+                                                    <p className="text-sm">{product?.reviewCount}</p>
+                                                    <IconUser size={16} />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={product?.author?.avatar ?? ""} alt="Author Avatar" />
+                                                        <AvatarFallback className="text-xs">CC</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm">{product?.author?.firstName == null ? "" : " " + product?.author.lastName}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </>
-                                )}
+                                    </CardContent>
+                                </Card>
+                            </div>
 
-                            </CardContent>
-                        </Card>
-
-                        {/* Variants */}
-                        <Card>
-                            <CardContent className="pt-6">
-                                <h2 className="text-lg font-semibold mb-4">Variants</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label className="text-sm font-medium text-muted-foreground mb-2 block">Sizes</Label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {["XS", "S", "M", "L", "XL", "XXL"].map((size) =>
-                                                isEditing ? (
-                                                    <Button
-                                                        key={size}
-                                                        variant={selectedSizes.includes(size) ? "default" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => handleSizeToggle(size)}
-                                                        className="h-9 w-12"
-                                                    >
-                                                        {size}
-                                                    </Button>
-                                                ) : (
-                                                    <Badge
-                                                        key={size}
-                                                        variant={selectedSizes.includes(size) ? "default" : "outline"}
-                                                        className={`h-9 w-12 flex items-center justify-center ${!selectedSizes.includes(size) && "opacity-50"}`}
-                                                    >
-                                                        {size}
-                                                    </Badge>
-                                                ),
+                            {/* Right Column */}
+                            <div className="space-y-6">
+                                {/* Product Images */}
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="images"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        {isEditing ? (
+                                                            <ImageUploader
+                                                                defaultMode="multiple"
+                                                                showModeToggle={false}
+                                                                value={field.value}
+                                                                onChange={(newImages) => field.onChange(newImages)}
+                                                                label="Upload Product Images"
+                                                            />
+                                                        ) : (
+                                                            <>
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <h2 className="text-lg font-semibold">Product Images</h2>
+                                                                </div>
+                                                                <div className="space-y-3">
+                                                                    {product?.images.map((image, index) => (
+                                                                        <div key={index} className="flex items-center gap-3 border rounded-md p-2">
+                                                                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+                                                                                <img
+                                                                                    src={image}
+                                                                                    alt={`Product ${index}`}
+                                                                                    width={64}
+                                                                                    height={64}
+                                                                                    className="h-full w-full object-cover"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-sm font-medium truncate">product-image-{index}.jpg</p>
+                                                                                <p className="text-xs text-muted-foreground">800 × 600 • 245 KB</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
                                             )}
+                                        />
+                                    </CardContent>
+                                </Card>
+
+                                {/* Variants */}
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <h2 className="text-lg font-semibold mb-4">Variants</h2>
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="Sizes"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-sm font-medium text-muted-foreground">Sizes</FormLabel>
+                                                        <FormControl>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {Object.values(ProductSize).map((size) =>
+                                                                    isEditing ? (
+                                                                        <Button
+                                                                            key={size}
+                                                                            type="button"
+                                                                            variant={field.value.includes(size) ? "default" : "outline"}
+                                                                            size="sm"
+                                                                            onClick={() => handleSizeToggle(size)}
+                                                                            className="h-9 w-12"
+                                                                        >
+                                                                            {size}
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Badge
+                                                                            key={size}
+                                                                            variant={field.value.includes(size) ? "default" : "outline"}
+                                                                            className={`h-9 w-12 flex items-center justify-center ${!field.value.includes(size) && "opacity-50"}`}
+                                                                        >
+                                                                            {size}
+                                                                        </Badge>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </main>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </form>
+                </Form>
+            </FormProvider>
         </Main>
     );
 }
