@@ -11,6 +11,9 @@ import {
 import { ProductPreview } from "@/services/type/product-type";
 import { useDeleteProductMutation } from "@/services/query/product-query";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@radix-ui/react-dropdown-menu";
+import { useState } from "react";
 
 interface ProductDeleteDialogProps {
     open: boolean;
@@ -23,11 +26,12 @@ export function ProductDeleteDialog({
     onOpenChange,
     currentRow,
 }: ProductDeleteDialogProps) {
+    const [isPermanently, setIsPermanently] = useState(false);
     const { mutateAsync: deleteProduct, isPending } = useDeleteProductMutation();
 
     const handleDelete = async () => {
         try {
-            await deleteProduct({ id: currentRow.id });
+            await deleteProduct({ id: currentRow.id, isHard: isPermanently });
             onOpenChange();
         } catch {
             toast.error(
@@ -45,6 +49,10 @@ export function ProductDeleteDialog({
                         product <span className="font-bold">{currentRow.name}</span> from your
                         database.
                     </AlertDialogDescription>
+                    <div className="flex items-center space-x-2 mt-4">
+                        <Checkbox onCheckedChange={(checked) => setIsPermanently(!!checked)} />
+                        <Label>Delete Permentmantly</Label>
+                    </div>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>

@@ -123,7 +123,7 @@ export function ProductDetailDialog({
 
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground mb-1">Created By</p>
-                                    <p className="text-sm">{currentRow.author.lastName ?? "N/A"}</p>
+                                    <p className="text-sm">{currentRow.author?.lastName ?? "N/A"}</p>
                                 </div>
 
                                 <div>

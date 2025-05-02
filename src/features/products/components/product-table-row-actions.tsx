@@ -6,7 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Trash2, Eye } from "lucide-react";
 import { Row } from "@tanstack/react-table";
 import { useTable } from "@/stores/table-context";
 import { useNavigate } from "@tanstack/react-router";
@@ -22,17 +22,9 @@ export function ProductTableRowActions({
     const navigate = useNavigate()
     const { setOpen, setCurrentRow } = useTable();
 
-    // const product = row.original as Product;
-
     const onView = () => {
         navigate({ to: "/products/$id", params: { id: row.original.slug } });
-        // navigate({ to: `/products/${row.original.slug}` })
     }
-
-    const onEdit = () => {
-        setCurrentRow(row.original);
-        setOpen("edit");
-    };
 
     const onDelete = () => {
         setCurrentRow(row.original);
@@ -51,10 +43,6 @@ export function ProductTableRowActions({
                 <DropdownMenuItem onClick={onView}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onDelete} className="text-red-600">

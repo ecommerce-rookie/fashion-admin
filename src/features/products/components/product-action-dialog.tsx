@@ -45,7 +45,7 @@ export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) 
         Quantity: 0,
         Sizes: [] as ProductSize[],
         CategoryId: 0,
-        Gender: '',
+        Gender: 'Male',
         Status: ProductStatus.Available,
         Files: []
     });
@@ -85,6 +85,7 @@ export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) 
 
         try {
             await createProduct(formData);
+
             toast.success(isEdit ? 'Product updated successfully' : 'Product created successfully');
             onOpenChange(false);
         } catch {

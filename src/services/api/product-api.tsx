@@ -53,13 +53,30 @@ export const getAllProducts = async ({
 
 export const getProductBySlug = async (slug: string): Promise<ResponseModel<ProductDetail>> => {
 
-    const response = await axiosServices.get(`${productEndpoint}/${slug}`)
+    const response = await axiosServices.get(`${productEndpoint}/manage/${slug}`)
 
     return response.data
 }
 
 export const CreateProduct = async (data: ProductCreate): Promise<ResponseModel<string>> => {
-    const response = await axiosClientUpload.post(productEndpoint, data);
+    const formData = new FormData();
+    formData.append("name", data.Name);
+    formData.append("unitPrice", data.UnitPrice.toString());
+    formData.append("purchasePrice", data.PurchasePrice.toString());
+    formData.append("description", data.Description);
+    formData.append("status", data.Status);
+    formData.append("gender", data.Gender);
+    formData.append("categoryId", data.CategoryId.toString());
+    formData.append("quantity", data.Quantity.toString());
+    formData.append("sizes", JSON.stringify(data.Sizes));
+    data.Sizes?.forEach((size) => {
+        formData.append("sizes", size);
+    })
+    data?.Files?.forEach((image) => {
+        formData.append("files", image as File);
+    });
+
+    const response = await axiosClientUpload.postForm(productEndpoint, formData);
 
     return response.data;
 };
@@ -77,11 +94,13 @@ export const UpdateProduct = async ({
 };
 
 export const DeleteProduct = async ({
-    id
+    id,
+    isHard
 }: {
     id: string;
+    isHard?: boolean;
 }): Promise<ResponseModel<string>> => {
-    const response = await axiosServices.delete(`${productEndpoint}/${id}`);
+    const response = await axiosServices.delete(`${productEndpoint}/${id}?isHard=${isHard}`);
 
     return response.data;
 };

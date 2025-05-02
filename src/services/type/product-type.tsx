@@ -13,6 +13,7 @@ export type ProductPreview = {
     categoryName: string
     reviewCount: number
     star: number
+    isDeleted: boolean
 }
 
 export type ProductDetail = {
@@ -69,7 +70,7 @@ export type ProductCreate = {
     Quantity: number
     Sizes?: ProductSize[]
     Gender: string
-    Files?: File[] | ImageUpload[]
+    Files?: File[]
 }
 
 export type ProductUpdate = ProductCreate & {

@@ -1,6 +1,5 @@
 import { useTable } from "@/stores/table-context";
 import { ProductDeleteDialog } from "./product-delete-dialog";
-import { ProductDetailDialog } from "./product-detail-dialog"; // We'll create this next
 import { ProductsActionDialog } from "./product-action-dialog";
 
 export function ProductDialogs() {
@@ -22,32 +21,17 @@ export function ProductDialogs() {
             />
 
             {currentRow && (
-                <>
-                    <ProductDetailDialog
-                        currentRow={currentRow}
-                        open={open === "view"}
-                        onOpenChange={() => {
-                            setOpen("view");
-                            setTimeout(() => {
-                                setCurrentRow(null);
-                            }, 500);
-                        }}
-                    />
-
-
-
-                    <ProductDeleteDialog
-                        key={`product-delete-${currentRow.id}`}
-                        currentRow={currentRow}
-                        open={open === "delete"}
-                        onOpenChange={() => {
-                            setOpen("delete");
-                            setTimeout(() => {
-                                setCurrentRow(null);
-                            }, 500);
-                        }}
-                    />
-                </>
+                <ProductDeleteDialog
+                    key={`product-delete-${currentRow.id}`}
+                    currentRow={currentRow}
+                    open={open === "delete"}
+                    onOpenChange={() => {
+                        setOpen("delete");
+                        setTimeout(() => {
+                            setCurrentRow(null);
+                        }, 500);
+                    }}
+                />
             )}
         </>
     );

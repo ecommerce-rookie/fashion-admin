@@ -120,6 +120,9 @@ export const columns: ColumnDef<ProductPreview>[] = [
                             {row.original.categoryName}
                         </Badge>
                     )}
+                    <Badge variant={row.original.isDeleted ? "destructive" : "default"} className="text-xs">
+                        {row.original.isDeleted ? "Deleted" : "Active"}
+                    </Badge>
                 </div>
             )
         },
