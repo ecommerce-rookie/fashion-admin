@@ -1,5 +1,3 @@
-
-import { UsersActionDialog } from "./users-action-dialog";
 import { UsersDeleteDialog } from "./users-delete-dialog";
 
 import { useTable } from "@/stores/table-context";
@@ -9,11 +7,11 @@ export function UsersDialogs() {
 
   return (
     <>
-      <UsersActionDialog
+      {/* <UsersActionDialog
         key="user-add"
         open={open === "add"}
         onOpenChange={() => setOpen("add")}
-      />
+      /> */}
 
       {currentRow && (
         <>
@@ -28,7 +26,7 @@ export function UsersDialogs() {
             }}
           /> */}
 
-          <UsersActionDialog
+          {/* <UsersActionDialog
             key={`user-edit-${currentRow.id}`}
             currentRow={currentRow}
             open={open === "edit"}
@@ -38,7 +36,7 @@ export function UsersDialogs() {
                 setCurrentRow(null);
               }, 500);
             }}
-          />
+          /> */}
 
           <UsersDeleteDialog
             key={`user-delete-${currentRow.id}`}

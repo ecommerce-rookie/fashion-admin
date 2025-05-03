@@ -2,7 +2,6 @@
 
 
 import { useTable } from "@/stores/table-context";
-import { OrderActionDialog } from "./order-action-dialog";
 import { OrderUpdateDialog } from "./order-delete-dialog";
 
 export function OrderDialogs() {
@@ -10,11 +9,11 @@ export function OrderDialogs() {
 
   return (
     <>
-      <OrderActionDialog
+      {/* <OrderActionDialog
         key="user-add"
         open={open === "add"}
         onOpenChange={() => setOpen("add")}
-      />
+      /> */}
 
       {currentRow && (
         <>
@@ -29,7 +28,7 @@ export function OrderDialogs() {
             }}
           /> */}
 
-          <OrderActionDialog
+          {/* <OrderActionDialog
             key={`user-edit-${currentRow.id}`}
             currentRow={currentRow}
             open={open === "edit"}
@@ -39,7 +38,7 @@ export function OrderDialogs() {
                 setCurrentRow(null);
               }, 500);
             }}
-          />
+          /> */}
 
           <OrderUpdateDialog
             key={`user-delete-${currentRow.id}`}

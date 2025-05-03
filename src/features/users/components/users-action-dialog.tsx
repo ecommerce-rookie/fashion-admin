@@ -1,48 +1,5 @@
-"use client";
 
-import { Button } from "@highschool/ui/components/ui/button";
-import { Input } from "@highschool/ui/components/ui/input";
-import { HighSchoolAssets, UserPreview } from "@highschool/interfaces";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@highschool/ui/components/ui/sheet";
-import { Label } from "@highschool/ui/components/ui/label";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@highschool/ui/components/ui/tooltip";
-import { Textarea } from "@highschool/ui/components/ui/textarea";
-import { IconRepeat } from "@tabler/icons-react";
-import { useState } from "react";
-import {
-  useCheckUsernameQuery,
-  useCreateUserMutation,
-  useUploaderMutation,
-} from "@highschool/react-query/queries";
-import { toast } from "sonner";
-import { useDebounceValue } from "@highschool/hooks";
-import { cn } from "@highschool/ui/lib/utils";
-
-import ImageUploader from "@/components/ui/image-upload";
-import { generatePassword } from "@/domain/utils/password";
-import { PasswordInput } from "@/components/ui/password-input";
-import { AnimatedCheckCircle } from "@/components/core/common/animated-icons/animated-check-circle";
-import { AnimatedXCircle } from "@/components/core/common/animated-icons/animated-x-icon";
-import { useTable } from "@/stores/table-context";
-
-interface Props {
-  currentRow?: UserPreview;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-export function UsersActionDialog({ currentRow, open, onOpenChange }: Props) {
+export function UsersActionDialog() {
   return <div>okok</div>
 }
 

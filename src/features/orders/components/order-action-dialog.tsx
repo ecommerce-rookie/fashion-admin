@@ -1,8 +1,5 @@
 // "use client";
 
-import { Category } from "@/services/type/category-type";
-import { Order } from "@/services/type/order-type";
-
 // import { Button } from "@highschool/ui/components/ui/button";
 // import { Input } from "@highschool/ui/components/ui/input";
 // import { HighSchoolAssets, UserPreview } from "@highschool/interfaces";
@@ -40,12 +37,7 @@ import { Order } from "@/services/type/order-type";
 // import { AnimatedXCircle } from "@/components/core/common/animated-icons/animated-x-icon";
 // import { useTable } from "@/stores/table-context";
 
-interface Props {
-  currentRow?: Order;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-export function OrderActionDialog({ currentRow, open, onOpenChange }: Props) {
+export function OrderActionDialog() {
   return <div>okok</div>
 }
 
