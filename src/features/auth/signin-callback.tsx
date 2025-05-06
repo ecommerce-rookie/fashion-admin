@@ -12,11 +12,11 @@ export default function SigninCallback() {
         const processLogin = async () => {
             try {
                 await processLoginCallback();
-                toast.success("Đăng nhập thành công!");
+                toast.success("Login successful!");
                 navigate({ to: "/" });
             } catch (error) {
-                console.error("Đăng nhập thất bại:", error);
-                toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+                console.error("Login fail!", error);
+                toast.error("Login failed! Please try again.");
                 navigate({ to: "/sign-in" });
             }
         };
@@ -27,8 +27,8 @@ export default function SigninCallback() {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <div className="text-center">
-                <h2 className="text-2xl font-semibold">Đang xử lý đăng nhập...</h2>
-                <p className="mt-2 text-muted-foreground">Vui lòng đợi trong giây lát.</p>
+                <h2 className="text-2xl font-semibold">Login Processing...</h2>
+                <p className="mt-2 text-muted-foreground">Please wait.</p>
             </div>
         </div>
     );

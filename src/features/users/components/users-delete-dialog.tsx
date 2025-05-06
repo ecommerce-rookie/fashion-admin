@@ -37,7 +37,7 @@ export function UsersDeleteDialog({ open, onOpenChange, currentRow }: Props) {
   );
 
   const handleDelete = async () => {
-    if (value.trim() !== currentRow.id) return;
+    if (value.trim() !== currentRow.email) return;
 
     await updateUser({
       userId: currentRow.id,

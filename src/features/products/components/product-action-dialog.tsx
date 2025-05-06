@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Textarea } from '@/components/ui/textarea'
 
 
 interface Props<T> {
@@ -122,22 +123,6 @@ export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) 
                 </DialogHeader>
                 <ScrollArea className='max-h-[70vh]'>
                     <div className='grid grid-cols-1 gap-8 w-full py-2 px-1'>
-                        {/* Product images */}
-                        <Card className="border-none shadow-sm">
-                            <CardContent className='p-4 bg-muted/30 rounded-lg'>
-                                <div className='flex flex-col gap-3'>
-                                    <h3 className='text-sm font-semibold flex items-center'>
-                                        <Upload className='h-4 w-4 mr-2' /> Product Images
-                                    </h3>
-                                    <ImageUploader
-                                        showModeToggle={false}
-                                        defaultMode='multiple'
-                                        onChange={(files) => handleInputChange('Files', Array.isArray(files) ? files : [files].filter(Boolean))}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-
                         {/* Product details */}
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                             {/* Left column */}
@@ -155,7 +140,7 @@ export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) 
 
                                 <div className='flex flex-col gap-2'>
                                     <label className='text-sm font-medium'>Description</label>
-                                    <Input
+                                    <Textarea
                                         value={formData.Description}
                                         onChange={(e) => handleInputChange('Description', e.target.value)}
                                         placeholder='Enter product description'
@@ -294,6 +279,22 @@ export function ProductsActionDialog<T>({ mode, open, onOpenChange }: Props<T>) 
                                 </div>
                             </div>
                         </div>
+
+                        {/* Product images */}
+                        <Card className="border-none shadow-sm">
+                            <CardContent className='p-4 bg-muted/30 rounded-lg'>
+                                <div className='flex flex-col gap-3'>
+                                    <h3 className='text-sm font-semibold flex items-center'>
+                                        <Upload className='h-4 w-4 mr-2' /> Product Images
+                                    </h3>
+                                    <ImageUploader
+                                        showModeToggle={false}
+                                        defaultMode='multiple'
+                                        onChange={(files) => handleInputChange('Files', Array.isArray(files) ? files : [files].filter(Boolean))}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </ScrollArea>
 

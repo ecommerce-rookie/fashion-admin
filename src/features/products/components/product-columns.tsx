@@ -61,11 +61,11 @@ export const columns: ColumnDef<ProductPreview>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex flex-col gap-x-2 w-full">
-                    <div className="flex items-center justify-between gap-x-2 w-[20%]">
+                    <div className="flex items-center justify-between gap-x-2 w-[25%]">
                         <span>{row.original.star} </span>
                         <IconStarFilled size={16} />
                     </div>
-                    <div className="flex items-center justify-between gap-x-2 w-[20%]">
+                    <div className="flex items-center justify-between gap-x-2 w-[25%]">
                         <span>{row.original.reviewCount ?? 0}</span>
                         <IconUser size={16} />
                     </div>

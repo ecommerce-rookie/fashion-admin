@@ -88,7 +88,14 @@ class AuthService {
 
   public async logout(): Promise<void> {
     try {
-      await this.userManager.signoutRedirect();
+      const postLogoutRedirectUri = `${window.location.origin}/signout-callback`;
+      console.log('Initiating logout with redirect to:', postLogoutRedirectUri);
+      
+      // Explicitly set the post_logout_redirect_uri to ensure it's included in the request
+      await this.userManager.signoutRedirect({
+        id_token_hint: this.user?.id_token,
+        post_logout_redirect_uri: postLogoutRedirectUri
+      });
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;

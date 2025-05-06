@@ -1,6 +1,5 @@
-import axios from "axios";
 import { userEndpoint } from "../endpoint";
-import { User, UserRole } from "../type/user-type";
+import { AuthorLogin, User, UserRole } from "../type/user-type";
 import fetchPaginatedData, { Pagination, ResponseModel } from "../common";
 import axiosServices from "@/lib/axios";
 
@@ -88,7 +87,7 @@ export const UpdateUserStatus = async ({
     userId: string,
     status: string
 }): Promise<ResponseModel<string>> => {
-    const response = await axiosServices.patch(`${userEndpoint}/${userId}`, {
+    const response = await axiosServices.patch(`${userEndpoint}/${userId}/status`, {
         status: status
     })
 
@@ -96,12 +95,18 @@ export const UpdateUserStatus = async ({
 }
 
 export const DeleteUser = async ({
-    id
+    id,
 }: {
     id: string
 }): Promise<ResponseModel<string>> => {
 
-    const response = await axios.delete(`${userEndpoint}/${id}`)
+    const response = await axiosServices.delete(`${userEndpoint}/${id}`)
+
+    return response.data;
+}
+
+export const getAuthor = async (): Promise<ResponseModel<AuthorLogin | null>> => {
+    const response = await axiosServices.get(`${userEndpoint}/author`)
 
     return response.data;
 }

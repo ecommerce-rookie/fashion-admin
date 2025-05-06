@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Main } from "@/components/core/layout/main";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import { useCategoriesQuery } from "@/services/query/category-query";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ProductSize, ProductStatus, ProductUpdate } from "@/services/type/product-type";
 import { IconStarFilled, IconUser } from "@tabler/icons-react";
-import ImageUploader from "@/components/ui/image-upload";
+import ImageUploader, { ImageData } from "@/components/ui/image-upload";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productUpdateSchema, ProductUpdateFormValues } from "./product-update-schema";
@@ -31,11 +32,12 @@ export default function ProductDetail() {
         page: -1,
         eachPage: 10
     });
-    const { mutateAsync: updateProduct } = useUpdateProductMutation();
+    const { mutateAsync: updateProduct, isPending: isUpdateLoading } = useUpdateProductMutation();
 
     const product = data?.data;
     const navigate = useNavigate();
     const isLoading = isProductLoading || isCategoryLoading;
+    const [newImage, setNewImage] = useState<ImageData>();
 
     // Create form with Zod validation
     const form = useForm<ProductUpdateFormValues>({
@@ -73,7 +75,7 @@ export default function ProductDetail() {
                 Status: product.status,
                 Sizes: product.sizes,
                 slug: id || "",
-                images: product.images || [],
+                images: [],
                 Files: []
             });
         }
@@ -130,12 +132,14 @@ export default function ProductDetail() {
             const productUpdateData: ProductUpdate = {
                 ...values,
                 slug: id || "",
-                Files: values.Files?.map((fileObj) => fileObj.file).filter((file): file is File => !!file)
+                images: newImage?.deletedImages,
+                Files: newImage?.newImages
             };
 
             await updateProduct({ slug: id || "", data: productUpdateData });
+
+            toast.success("Product updated successfully!");
             setIsEditing(false);
-            // Show success notification or feedback here
         } catch {
             toast.error("Failed to update product. Please try again.");
         }
@@ -173,8 +177,8 @@ export default function ProductDetail() {
                                 </Button>
                                 <Button
                                     className="h-9"
-                                    onClick={form.handleSubmit(onSubmit)}
-                                    disabled={!form.formState.isValid}
+                                    onClick={() => onSubmit(form.getValues())}
+                                    disabled={isUpdateLoading}
                                 >
                                     <Save className="mr-2 h-4 w-4" />
                                     Save Changes
@@ -494,51 +498,40 @@ export default function ProductDetail() {
                                 {/* Product Images */}
                                 <Card>
                                     <CardContent className="pt-6">
-                                        <FormField
-                                            control={form.control}
-                                            name="images"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormControl>
-                                                        {isEditing ? (
-                                                            <ImageUploader
-                                                                defaultMode="multiple"
-                                                                showModeToggle={false}
-                                                                value={field.value}
-                                                                onChange={(newImages) => field.onChange(newImages)}
-                                                                label="Upload Product Images"
-                                                            />
-                                                        ) : (
-                                                            <>
-                                                                <div className="flex items-center justify-between mb-4">
-                                                                    <h2 className="text-lg font-semibold">Product Images</h2>
-                                                                </div>
-                                                                <div className="space-y-3">
-                                                                    {product?.images.map((image, index) => (
-                                                                        <div key={index} className="flex items-center gap-3 border rounded-md p-2">
-                                                                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                                                                                <img
-                                                                                    src={image}
-                                                                                    alt={`Product ${index}`}
-                                                                                    width={64}
-                                                                                    height={64}
-                                                                                    className="h-full w-full object-cover"
-                                                                                />
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <p className="text-sm font-medium truncate">product-image-{index}.jpg</p>
-                                                                                <p className="text-xs text-muted-foreground">800 × 600 • 245 KB</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                        {isEditing ? (
+                                            <ImageUploader
+                                                defaultMode="multiple"
+                                                showModeToggle={false}
+                                                value={product?.images || []}
+                                                onImagesChange={setNewImage}
+                                                label="Upload Product Images"
+                                            />
+                                        ) : (
+                                            <div key={"key"}>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h2 className="text-lg font-semibold">Product Images</h2>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {product?.images.map((image, index) => (
+                                                        <div key={index} className="flex items-center gap-3 border rounded-md p-2">
+                                                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+                                                                <img
+                                                                    src={image}
+                                                                    alt={`Product ${index}`}
+                                                                    width={64}
+                                                                    height={64}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium truncate">product-image-{index}.jpg</p>
+                                                                <p className="text-xs text-muted-foreground">800 × 600 • 245 KB</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
 

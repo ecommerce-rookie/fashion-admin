@@ -69,9 +69,6 @@ export const CreateProduct = async (data: ProductCreate): Promise<ResponseModel<
     formData.append("categoryId", data.CategoryId.toString());
     formData.append("quantity", data.Quantity.toString());
     formData.append("sizes", JSON.stringify(data.Sizes));
-    data.Sizes?.forEach((size) => {
-        formData.append("sizes", size);
-    })
     data?.Files?.forEach((image) => {
         formData.append("files", image as File);
     });
@@ -88,7 +85,25 @@ export const UpdateProduct = async ({
     slug: string;
     data: ProductUpdate;
 }): Promise<ResponseModel<string>> => {
-    const response = await axiosClientUpload.patch(`${productEndpoint}/${slug}`, data);
+
+    const formData = new FormData();
+    formData.append("name", data.Name);
+    formData.append("unitPrice", data.UnitPrice.toString());
+    formData.append("purchasePrice", data.PurchasePrice.toString());
+    formData.append("description", data.Description);
+    formData.append("status", data.Status);
+    formData.append("gender", data.Gender);
+    formData.append("categoryId", data.CategoryId.toString());
+    formData.append("quantity", data.Quantity.toString());
+    formData.append("sizes", JSON.stringify(data.Sizes));
+    data?.Files?.forEach((image) => {
+        formData.append("files", image as File);
+    });
+    data?.images?.forEach((image) => {
+        formData.append("images", image as string);
+    });
+
+    const response = await axiosClientUpload.patchForm(`${productEndpoint}/${slug}`, formData);
 
     return response.data;
 };

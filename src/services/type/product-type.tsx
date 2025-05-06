@@ -70,7 +70,7 @@ export type ProductCreate = {
     Quantity: number
     Sizes?: ProductSize[]
     Gender: string
-    Files?: File[]
+    Files?: File[] | ImageUpload[]
 }
 
 export type ProductUpdate = ProductCreate & {

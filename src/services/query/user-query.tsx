@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { CreateUser, DeleteUser, GetAllUsers, UpdateUser, UpdateUserStatus } from "../api/user-api"
+import { CreateUser, DeleteUser, GetAllUsers, getAuthor, UpdateUser, UpdateUserStatus } from "../api/user-api"
 import { UserRole } from "../type/user-type"
 
 export const useUsersQuery = ({
@@ -100,3 +100,10 @@ export const useUpdateUserStatusMutation = () => {
         },
     });
 };
+
+export const useGetAuthorQuery = () => {
+    return useQuery({
+        queryKey: ["author"],
+        queryFn: () => getAuthor(),
+    });
+}

@@ -37,6 +37,7 @@ export const useCreateProductMutation = () => {
         mutationFn: CreateProduct,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ["products"] });
+            queryClient.invalidateQueries({ queryKey: ["product-by-id"] });
 
             toast.success(data.message ?? "Create successfully");
 
@@ -57,6 +58,7 @@ export const useUpdateProductMutation = () => {
         mutationFn: UpdateProduct,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ["products"] });
+            queryClient.invalidateQueries({ queryKey: ["product-by-id"] });
 
             toast.success(data.message ?? "Create successfully");
 

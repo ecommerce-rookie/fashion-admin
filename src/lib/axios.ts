@@ -3,6 +3,7 @@ import axios, { AxiosError } from "axios";
 import { getCookie } from "@/utils/storage.util";
 import { Token } from "@/enum/storage";
 import authService from "@/services/auth-service";
+import { UserStatus } from "@/services/type/user-type";
 
 const axiosServices = axios.create({
     baseURL: import.meta.env.VITE_API_URL,

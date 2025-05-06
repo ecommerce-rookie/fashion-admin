@@ -26,8 +26,13 @@ export enum UserRole {
 }
 
 export enum UserStatus {
-    ACTIVE = 'Active',
-    DELETED = 'Deleted',
-    PENDING = 'Pending',
-    BLOCKED = 'Blocked'
+    NotVerify = 'NotVerify',
+    Active = 'Active',
+    Banned = 'Banned',
+    Deleted = 'Deleted'
+}
+
+export type AuthorLogin = Author & {
+    expiredAt: Date;
+    status: string;
 }
