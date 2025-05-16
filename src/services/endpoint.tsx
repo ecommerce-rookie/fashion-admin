@@ -34,3 +34,4 @@ export const productEndpoint = `${apiPrefix}/products`
 export const userEndpoint = `${apiPrefix}/users`
 export const orderEndpoint = `${apiPrefix}/orders`
 export const categoryEndpoint = `${apiPrefix}/categories`
+export const cartEndpoint = `${apiPrefix}/carts`
